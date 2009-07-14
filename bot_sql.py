@@ -143,6 +143,7 @@ class html:
 banco = db('carcereiro.db')
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.connect((server, 6667))
+sock.settimeout(900)
 sock.send('NICK %s \r\n' % nick)
 sock.send('USER %s \'\' \'\' :%s\r\n' % (nick, 'python'))
 sock.send('JOIN %s \r\n' % channel)
