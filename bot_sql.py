@@ -122,7 +122,7 @@ class html:
 	   }
 	def title(self):
 		self.feed = self.get_data()
-		title_pattern = re.compile(r"<[Tt][Ii][Tt][Ll][Ee]>(.*)</[Tt][Ii][Tt][Ll][Ee]>", re.UNICODE)
+		title_pattern = re.compile(r"<[Tt][Ii][Tt][Ll][Ee]>(.*?)</[Tt][Ii][Tt][Ll][Ee]>", re.UNICODE)
 		title_search = title_pattern.search(self.feed)
 		if title_search is not None:
 			try:
