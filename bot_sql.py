@@ -222,6 +222,7 @@ while True:
 		try:
 			url  = url_search.group(2)
 			nick = url_search.group(1)
+			print 'url: %r' % (url)
 			parser = html(url)
 			sendmsg(  parser.title() )
 			banco.increment_url( nick )
