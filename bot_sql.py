@@ -143,12 +143,23 @@ class html:
 			return "<title>Fail in get</title>"
 
 
+password = sys.argv[1]
+
 banco = db('carcereiro.db')
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.connect((server, 6667))
 sock.settimeout(900)
-sock.send('NICK %s \r\n' % nick)
+
+# initially use nick_ (I hope nobody will connect using it :)
+sock.send('NICK %s_ \r\n' % nick)
 sock.send('USER %s \'\' \'\' :%s\r\n' % (nick, 'python'))
+
+# regain nick, if it is in use
+sock.send('NICKSERV REGAIN %s %s\r\n' % (nick, password))
+# change to the real nick
+sock.send('NICK %s \r\n' % nick)
+
+# join the channel
 sock.send('JOIN %s \r\n' % channel)
 
 
