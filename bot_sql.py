@@ -12,8 +12,11 @@ channel = '#masmorra'
 nick = 'carcereiro'
 server = 'irc.oftc.net' 
 
-def sendmsg(msg): 
-    sock.send('PRIVMSG '+ channel + ' :' + str(msg) + '\r\n')
+def _sendmsg(who, msg): 
+    sock.send('PRIVMSG '+ who + ' :' + str(msg) + '\r\n')
+
+def sendmsg(msg):
+    return _sendmsg(channel, msg)
 
 class db():
 	def __init__(self, dbfile):
