@@ -165,6 +165,72 @@ sock.send('NICKSERV IDENTIFY %s\r\n' % (password))
 sock.send('JOIN %s \r\n' % channel)
 
 
+def do_karma(r):
+	var = r.group(1)
+	banco.increment_karma(var)
+	sendmsg(var + ' now has ' + str(banco.get_karma(var)) + ' points of karma')
+
+def do_slack(r):
+	var = len(r.group(2)) - 1
+	nick = r.group(1)
+	banco.increment_slack(nick,var)
+	# continue handling other regexps
+	return True
+
+
+def do_dec_karma(resultm):
+	var = resultm.group(1)
+	banco.decrement_karma(var)
+	sendmsg(var + ' now has ' + str(banco.get_karma(var)) + ' points of karma')
+
+
+def do_show_karma(resultk):
+	var = resultk.group(1)
+	points = banco.get_karma(var)
+	if points is not None:
+		sendmsg(var + ' have ' + str(points) + ' points of karma')
+	else:
+		sendmsg(var + ' doesn\'t have any point of karma')
+
+def do_dump_karmas(r):
+	sendmsg('karmas : ' + banco.get_karmas_count())
+
+def do_slackers(r):
+	sendmsg('slackers in chars : ' + banco.get_slacker_count())
+
+def do_urls(r):
+	sendmsg('users : ' + banco.get_urls_count())
+
+def do_url(url_search):
+	try:
+		url  = url_search.group(2)
+		nick = url_search.group(1)
+		print 'url: %r' % (url)
+		parser = html(url)
+		sendmsg(  parser.title() )
+		banco.increment_url( nick )
+	except:
+		sendmsg('[ Failed ]')
+		print url
+		print "Unexpected error:", sys.exc_info()[0]
+
+regexes = [
+	(':([a-zA-Z0-9\_]+)!.* PRIVMSG.* :(.*)$', do_slack),
+	('PRIVMSG.*[: ]([a-z][0-9a-z_\-\.]+)\+\+', do_karma),
+	('PRIVMSG.*[: ]([a-z][0-9a-z_\-\.]+)\-\-', do_dec_karma),
+	('PRIVMSG.*:karma ([a-z_\-\.]+)', do_show_karma),
+	('PRIVMSG.*[: ]\@karmas', do_dump_karmas),
+	('PRIVMSG.*[: ]\@slackers', do_slackers),
+	('PRIVMSG.*[: ]\@urls', do_urls),
+	('PRIVMSG.*[: ]ronaldo!', lambda r: sendmsg('brilha muito nu curintia!')),
+	(':([a-zA-Z0-9\_]+)!.* PRIVMSG .*(http://[^ \t>\n\r]+)', do_url),
+]
+
+compiled_res = []
+# compile all regexes:
+for e,f in regexes:
+	cr = re.compile(e, re.UNICODE)
+	compiled_res.append( (cr, f) )
 
 while True:
 	buffer = sock.recv(2040)
@@ -178,74 +244,14 @@ while True:
 	if re.search(':[!@]help', buffer, re.UNICODE) is not None or re.search(':'+nick+'[ ,:]+help', buffer, re.UNICODE) is not None:
 		sendmsg('@karmas, @urls, @slackers\r\n')
 
-	regexp  = re.compile('PRIVMSG.*[: ]([a-z][0-9a-z_\-\.]+)\+\+', re.UNICODE)
-	regexm  = re.compile('PRIVMSG.*[: ]([a-z][0-9a-z_\-\.]+)\-\-', re.UNICODE)
-	regexk  = re.compile('PRIVMSG.*:karma ([a-z_\-\.]+)', re.UNICODE)
-	regexu  = re.compile('PRIVMSG.*[: ]\@urls', re.UNICODE)
-	regexs  = re.compile('PRIVMSG.*[: ]\@slackers', re.UNICODE)
-	regexks = re.compile('PRIVMSG.*[: ]\@karmas', re.UNICODE)
-	regexslack  = re.compile(':([a-zA-Z0-9\_]+)!.* PRIVMSG.* :(.*)$', re.UNICODE)
-	pattern_url   = re.compile(':([a-zA-Z0-9\_]+)!.* PRIVMSG .*(http://[^ \t>\n\r]+)', re.UNICODE)
-	
-	resultp  = regexp.search(buffer)
-	resultm  = regexm.search(buffer)
-	resultk  = regexk.search(buffer)
-	resultu  = regexu.search(buffer)
-	results  = regexs.search(buffer)
-	resultks = regexks.search(buffer)
-	resultslack = regexslack.search(buffer)
-	url_search = pattern_url.search(buffer)
+	for exp,fn in compiled_res:
+		r = exp.search(buffer)
+		if r:
+			res = fn(r)
+			if not res:
+				break
 
-	if resultslack is not None:
-		var = len(resultslack.group(2)) - 1
-		nick = resultslack.group(1)
-		banco.increment_slack(nick,var)
 
-	if resultp is not None:
-		var = resultp.group(1)
-		banco.increment_karma(var)
-		sendmsg(var + ' now has ' + str(banco.get_karma(var)) + ' points of karma')
-		continue
-
-	if resultm is not None:
-		var = resultm.group(1)
-		banco.decrement_karma(var)
-		sendmsg(var + ' now has ' + str(banco.get_karma(var)) + ' points of karma')
-		continue
-
-	if resultk is not None:
-		var = resultk.group(1)
-		points = banco.get_karma(var)
-		if points is not None:
-			sendmsg(var + ' have ' + str(points) + ' points of karma')
-		else:
-			sendmsg(var + ' doesn\'t have any point of karma')
-		continue
-
-	if resultks is not None:
-		sendmsg('karmas : ' + banco.get_karmas_count())
-		continue
-	
-	if results is not None:
-		sendmsg('slackers in chars : ' + banco.get_slacker_count())
-		continue
-
-	if resultu is not None:
-		sendmsg('users : ' + banco.get_urls_count())
-		continue
-	
-	if url_search is not None:
-		try:
-			url  = url_search.group(2)
-			nick = url_search.group(1)
-			print 'url: %r' % (url)
-			parser = html(url)
-			sendmsg(  parser.title() )
-			banco.increment_url( nick )
-		except:
-			sendmsg('[ Failed ]')
-			print url
-			print "Unexpected error:", sys.exc_info()[0]
 
 sock.close()
 banco.close()
