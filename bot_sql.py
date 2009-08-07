@@ -124,8 +124,12 @@ class html:
       	'Accept-Charset' : 'utf-8,ISO-8859-1'
 	   }
 	def title(self):
-		self.feed = self.get_data()
-		title_pattern = re.compile(r"<[Tt][Ii][Tt][Ll][Ee]>(.*?)</[Tt][Ii][Tt][Ll][Ee]>", re.UNICODE)
+		try:
+			self.feed = self.get_data()
+		except:
+			print "Unexpected error:", sys.exc_info()
+			return "não consegui carregar a página, tio  :("
+		title_pattern = re.compile(r"<[Tt][Ii][Tt][Ll][Ee][^>]*?>(.*?)</[Tt][Ii][Tt][Ll][Ee]>", re.UNICODE)
 		title_search = title_pattern.search(self.feed)
 		if title_search is not None:
 			try:
@@ -134,13 +138,9 @@ class html:
 				print "Unexpected error:", sys.exc_info()[0]
 				return "[ Fail in parse ]"
 	def get_data(self):
-		try:
-			reqObj = urllib2.Request(self.url, None, self.headers)
-			urlObj = urllib2.urlopen(reqObj)
-			return  urlObj.read(4096).strip().replace("\n","").replace("\r", "")
-		except:
-			print "Unexpected error:", sys.exc_info()
-			return "<title>Fail in get</title>"
+		reqObj = urllib2.Request(self.url, None, self.headers)
+		urlObj = urllib2.urlopen(reqObj)
+		return  urlObj.read(4096).strip().replace("\n","").replace("\r", "")
 
 
 password = sys.argv[1]
@@ -207,7 +207,9 @@ def do_url(url_search):
 		nick = url_search.group(1)
 		print 'url: %r' % (url)
 		parser = html(url)
-		sendmsg(  parser.title() )
+		t = parser.title()
+		if t: sendmsg(  parser.title() )
+		else: sendmsg( "não consegui achar o título. desculpa tio  :(" )
 		banco.increment_url( nick )
 	except:
 		sendmsg('[ Failed ]')
