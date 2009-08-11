@@ -129,6 +129,13 @@ class html:
 		except:
 			print "Unexpected error:", sys.exc_info()
 			return "não consegui carregar a página, tio  :("
+
+		ctype = self.resp_headers.get('content-type', '')
+		print 'content type: %r' % (ctype)
+
+		if ctype.startswith('image/'):
+			return "olha, uma imagem!"
+
 		title_pattern = re.compile(r"<[Tt][Ii][Tt][Ll][Ee][^>]*?>(.*?)</[Tt][Ii][Tt][Ll][Ee]>", re.UNICODE)
 		title_search = title_pattern.search(self.feed)
 		if title_search is not None:
@@ -139,8 +146,10 @@ class html:
 				return "[ Fail in parse ]"
 	def get_data(self):
 		reqObj = urllib2.Request(self.url, None, self.headers)
-		urlObj = urllib2.urlopen(reqObj)
-		return  urlObj.read(4096).strip().replace("\n","").replace("\r", "")
+		self.urlObj = urllib2.urlopen(reqObj)
+		self.resp_headers = self.urlObj.info()
+		print 'headers:',repr(self.resp_headers.items())
+		return  self.urlObj.read(4096).strip().replace("\n","").replace("\r", "")
 
 
 password = sys.argv[1]
