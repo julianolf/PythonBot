@@ -235,7 +235,7 @@ regexes = [
 	('PRIVMSG.*[: ]\@urls', do_urls),
 	('PRIVMSG.*[: ]ronaldo!', lambda r: sendmsg('brilha muito nu curintia!')),
 	('PRIVMSG.*[: ]carcereiro', lambda r: sendmsg('eu?')),
-	(':([a-zA-Z0-9\_]+)!.* PRIVMSG .*(http://[^ \t>\n\r]+)', do_url),
+	(':([a-zA-Z0-9\_]+)!.* PRIVMSG .*(https?://[^ \t>\n\r]+)', do_url),
 ]
 
 compiled_res = []
