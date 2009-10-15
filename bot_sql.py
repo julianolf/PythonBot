@@ -136,6 +136,9 @@ class html:
 		if ctype.startswith('image/'):
 			return "olha, uma imagem!"
 
+		if ctype.startswith('audio/'):
+			return "eu não tenho ouvidos, seu insensível!"
+
 		title_pattern = re.compile(r"<[Tt][Ii][Tt][Ll][Ee][^>]*?>(.*?)</[Tt][Ii][Tt][Ll][Ee]>", re.UNICODE)
 		title_search = title_pattern.search(self.feed)
 		if title_search is not None:
@@ -234,6 +237,8 @@ regexes = [
 	('PRIVMSG.*[: ]\@slackers', do_slackers),
 	('PRIVMSG.*[: ]\@urls', do_urls),
 	('PRIVMSG.*[: ]ronaldo!', lambda r: sendmsg('brilha muito nu curintia!')),
+	('PRIVMSG.*[: ]curintia!', lambda r: sendmsg('brilha muito no ronaldo!')),
+	('PRIVMSG.*[: ]coraldo!', lambda r: sendmsg('brilha muito no ronintia!')),
 	('PRIVMSG.*[: ]carcereiro', lambda r: sendmsg('eu?')),
 	(':([a-zA-Z0-9\_]+)!.* PRIVMSG .*(https?://[^ \t>\n\r]+)', do_url),
 ]
