@@ -6,7 +6,11 @@ import sys
 import urllib2
 import os
 import time
+import traceback
 from pysqlite2 import dbapi2 as sqlite
+
+DATA_LIMIT = 262144
+DATA_CHUNK = 1024
 
 channel = '#masmorra'
 nick = 'carcereiro'
@@ -117,18 +121,16 @@ class db():
 class html:
 	def __init__(self, url):
 		self.url = url
-		self.feed = None
 		self.headers = {
 	      'User-Agent' : 'Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.7.10)',
    	   'Accept-Language' : 'pt-br,en-us,en',
       	'Accept-Charset' : 'utf-8,ISO-8859-1'
 	   }
 	def title(self):
-		try:
-			self.feed = self.get_data()
-		except:
-			print "Unexpected error:", sys.exc_info()
-			return "não consegui carregar a página, tio  :("
+		reqObj = urllib2.Request(self.url, None, self.headers)
+		self.urlObj = urllib2.urlopen(reqObj)
+		self.resp_headers = self.urlObj.info()
+		print 'headers:',repr(self.resp_headers.items())
 
 		ctype = self.resp_headers.get('content-type', '')
 		print 'content type: %r' % (ctype)
@@ -139,20 +141,26 @@ class html:
 		if ctype.startswith('audio/'):
 			return "eu não tenho ouvidos, seu insensível!"
 
-		title_pattern = re.compile(r"<[Tt][Ii][Tt][Ll][Ee][^>]*?>(.*?)</[Tt][Ii][Tt][Ll][Ee]>", re.UNICODE)
-		title_search = title_pattern.search(self.feed)
-		if title_search is not None:
-			try:
-				return "[ "+re.sub("&#?\w+;", "", title_search.group(1) )+" ]"
-			except:
-				print "Unexpected error:", sys.exc_info()[0]
-				return "[ Fail in parse ]"
-	def get_data(self):
-		reqObj = urllib2.Request(self.url, None, self.headers)
-		self.urlObj = urllib2.urlopen(reqObj)
-		self.resp_headers = self.urlObj.info()
-		print 'headers:',repr(self.resp_headers.items())
-		return  self.urlObj.read(4096).strip().replace("\n","").replace("\r", "")
+		title_pattern = re.compile(r"<[Tt][Ii][Tt][Ll][Ee][^>]*?>(.*?)</[Tt][Ii][Tt][Ll][Ee]>", re.UNICODE|re.MULTILINE|re.DOTALL)
+		data = ''
+		while True:
+			if len(data) > DATA_LIMIT:
+				break
+
+			d = self.urlObj.read(DATA_CHUNK)
+			if not d:
+				break
+
+			data += d
+
+			title_search = title_pattern.search(data)
+			if title_search is not None:
+				title = title_search.group(1)
+				title = title.strip().replace("\n"," ").replace("\r", " ")
+				title = re.sub("&#?\w+;", "", title)
+				return "[ %s ]" % (title)
+
+		return None
 
 
 password = sys.argv[1]
@@ -218,10 +226,18 @@ def do_url(url_search):
 		url  = url_search.group(2)
 		nick = url_search.group(1)
 		print 'url: %r' % (url)
-		parser = html(url)
-		t = parser.title()
-		if t: sendmsg(  parser.title() )
-		else: sendmsg( "não consegui achar o título. desculpa tio  :(" )
+		try:
+			parser = html(url)
+			t = parser.title()
+		except Exception,e:
+			print "Unexpected error:", sys.exc_info()[0]
+			traceback.print_exc()
+			t = "acho que algo explodiu aqui. :("
+
+		if not t:
+			t = "não consegui achar o título. desculpa tio  :("
+
+		sendmsg(t)
 		banco.increment_url( nick )
 	except:
 		sendmsg('[ Failed ]')
