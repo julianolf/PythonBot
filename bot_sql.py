@@ -141,26 +141,29 @@ class html:
 		if ctype.startswith('audio/'):
 			return "eu não tenho ouvidos, seu insensível!"
 
-		title_pattern = re.compile(r"<[Tt][Ii][Tt][Ll][Ee][^>]*?>(.*?)</[Tt][Ii][Tt][Ll][Ee]>", re.UNICODE|re.MULTILINE|re.DOTALL)
-		data = ''
-		while True:
-			if len(data) > DATA_LIMIT:
-				break
+		if 'html' in ctype or 'xml' in ctype:
+			title_pattern = re.compile(r"<title[^>]*?>(.*?)< */ *title *>", re.UNICODE|re.MULTILINE|re.DOTALL|re.IGNORECASE)
+			data = ''
+			while True:
+				if len(data) > DATA_LIMIT:
+					break
 
-			d = self.urlObj.read(DATA_CHUNK)
-			if not d:
-				break
+				d = self.urlObj.read(DATA_CHUNK)
+				if not d:
+					break
 
-			data += d
+				data += d
 
-			title_search = title_pattern.search(data)
-			if title_search is not None:
-				title = title_search.group(1)
-				title = title.strip().replace("\n"," ").replace("\r", " ")
-				title = re.sub("&#?\w+;", "", title)
-				return "[ %s ]" % (title)
+				title_search = title_pattern.search(data)
+				if title_search is not None:
+					title = title_search.group(1)
+					title = title.strip().replace("\n"," ").replace("\r", " ")
+					title = re.sub("&#?\w+;", "", title)
+					return "[ %s ]" % (title)
+			# no title found
+			return None
 
-		return None
+		return "%s? o que é isso?" % (ctype)
 
 
 password = sys.argv[1]
