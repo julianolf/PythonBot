@@ -232,6 +232,8 @@ def do_url(url_search):
 		try:
 			parser = html(url)
 			t = parser.title()
+		except urllib2.HTTPError,e:
+			t = "ui. erro. o servidor não gosta de mim (%s)" % (str(e))
 		except Exception,e:
 			print "Unexpected error:", sys.exc_info()[0]
 			traceback.print_exc()
