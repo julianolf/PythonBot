@@ -262,7 +262,7 @@ regexes = [
 	('PRIVMSG.*[: ]coraldo!', lambda r: sendmsg('brilha muito no ronintia!')),
 	('PRIVMSG.*[: ]carcereiro', lambda r: sendmsg('eu?')),
 	('PRIVMSG.*[: ]jip(e|inho) +tomb(a|ou)', lambda r: sendmsg('nao fala em jipe tombar!')),
-	(':([a-zA-Z0-9\_]+)!.* PRIVMSG .*(https?://[^ \t>\n\r]+)', do_url),
+	(':([a-zA-Z0-9\_]+)!.* PRIVMSG .*?(https?://[^ \t>\n\r]+)', do_url),
 ]
 
 compiled_res = []
