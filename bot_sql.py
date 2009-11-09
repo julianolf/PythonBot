@@ -12,12 +12,15 @@ from pysqlite2 import dbapi2 as sqlite
 DATA_LIMIT = 262144
 DATA_CHUNK = 1024
 
+ENCODING = 'utf-8'
+
 channel = '#masmorra'
 nick = 'carcereiro'
 server = 'irc.oftc.net' 
 
 def _sendmsg(who, msg): 
-    sock.send('PRIVMSG '+ who + ' :' + str(msg) + '\r\n')
+    s = 'PRIVMSG '+ who + ' :' + unicode(msg) + '\r\n'
+    sock.send(s.encode(ENCODING))
 
 def sendmsg(msg):
     return _sendmsg(channel, msg)
@@ -81,9 +84,9 @@ class db():
 		karmas = ''
 		for linha in self.cursor:
 			if len(karmas) == 0:
-				karmas = (linha[0]) + ' = ' + str(linha[1])
+				karmas = (linha[0]) + ' = ' + unicode(linha[1])
 			else:
-				karmas = karmas + ', ' + (linha[0]) + ' = ' + str(linha[1])
+				karmas = karmas + ', ' + (linha[0]) + ' = ' + unicode(linha[1])
 		return karmas
 	def get_karmas(self):
 		self.cursor.execute('SELECT nome FROM karma order by total desc')
@@ -103,18 +106,18 @@ class db():
 		urls = ''
 		for linha in self.cursor:
 			if len(urls) == 0:
-				urls = (linha[0]) + ' = ' + str(linha[1])
+				urls = (linha[0]) + ' = ' + unicode(linha[1])
 			else:
-				urls = urls + ', ' + (linha[0]) + ' = ' + str(linha[1])
+				urls = urls + ', ' + (linha[0]) + ' = ' + unicode(linha[1])
 		return urls
 	def get_slacker_count(self):
 		self.cursor.execute("SELECT nome,total FROM slack where data = '%s' order by total desc" % (time.strftime("%Y-%m-%d", time.localtime())))
 		slackers = ''
 		for linha in self.cursor:
 			if len(slackers) == 0:
-				slackers = (linha[0]) + ' = ' + str(linha[1])
+				slackers = (linha[0]) + ' = ' + unicode(linha[1])
 			else:
-				slackers = slackers + ', ' + (linha[0]) + ' = ' + str(linha[1])
+				slackers = slackers + ', ' + (linha[0]) + ' = ' + unicode(linha[1])
 		return slackers
 
 
@@ -191,7 +194,7 @@ sock.send('JOIN %s \r\n' % channel)
 def do_karma(r):
 	var = r.group(1)
 	banco.increment_karma(var)
-	sendmsg(var + ' now has ' + str(banco.get_karma(var)) + ' points of karma')
+	sendmsg(var + ' now has ' + unicode(banco.get_karma(var)) + ' points of karma')
 
 def do_slack(r):
 	var = len(r.group(2)) - 1
@@ -204,14 +207,14 @@ def do_slack(r):
 def do_dec_karma(resultm):
 	var = resultm.group(1)
 	banco.decrement_karma(var)
-	sendmsg(var + ' now has ' + str(banco.get_karma(var)) + ' points of karma')
+	sendmsg(var + ' now has ' + unicode(banco.get_karma(var)) + ' points of karma')
 
 
 def do_show_karma(resultk):
 	var = resultk.group(1)
 	points = banco.get_karma(var)
 	if points is not None:
-		sendmsg(var + ' have ' + str(points) + ' points of karma')
+		sendmsg(var + ' have ' + unicode(points) + ' points of karma')
 	else:
 		sendmsg(var + ' doesn\'t have any point of karma')
 
@@ -233,7 +236,7 @@ def do_url(url_search):
 			parser = html(url)
 			t = parser.title()
 		except urllib2.HTTPError,e:
-			t = "ui. erro. o servidor não gosta de mim (%s)" % (str(e))
+			t = "ui. erro. o servidor não gosta de mim (%s)" % (unicode(e))
 		except Exception,e:
 			print "Unexpected error:", sys.exc_info()[0]
 			traceback.print_exc()
@@ -283,8 +286,9 @@ while True:
 	if re.search(':[!@]help', buffer, re.UNICODE) is not None or re.search(':'+nick+'[ ,:]+help', buffer, re.UNICODE) is not None:
 		sendmsg('@karmas, @urls, @slackers\r\n')
 
+	msg = unicode(buffer, ENCODING, 'replace')
 	for exp,fn in compiled_res:
-		r = exp.search(buffer)
+		r = exp.search(msg)
 		if r:
 			res = fn(r)
 			if not res:
