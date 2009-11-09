@@ -254,9 +254,9 @@ def do_url(url_search):
 
 regexes = [
 	(':([a-zA-Z0-9\_]+)!.* PRIVMSG.* :(.*)$', do_slack),
-	('PRIVMSG.*[: ]([a-z][0-9a-z_\-\.]+)\+\+', do_karma),
-	('PRIVMSG.*[: ]([a-z][0-9a-z_\-\.]+)\-\-', do_dec_karma),
-	('PRIVMSG.*:karma ([a-z_\-\.]+)', do_show_karma),
+	('PRIVMSG.*[: ](\w\w+)\+\+', do_karma),
+	('PRIVMSG.*[: ](\w\w+)\-\-', do_dec_karma),
+	('PRIVMSG.*:karma (\w+)', do_show_karma),
 	('PRIVMSG.*[: ]\@karmas', do_dump_karmas),
 	('PRIVMSG.*[: ]\@slackers', do_slackers),
 	('PRIVMSG.*[: ]\@urls', do_urls),
