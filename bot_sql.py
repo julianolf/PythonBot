@@ -217,7 +217,10 @@ sock.send('JOIN %s \r\n' % channel)
 def do_karma(r):
 	var = r.group(1)
 	banco.increment_karma(var)
-	sendmsg(var + ' now has ' + unicode(banco.get_karma(var)) + ' points of karma')
+	if var == nick:
+		sendmsg('eu sou foda! ' + unicode(banco.get_karma(var)) + ' pontos de karma')
+	else:
+		sendmsg(var + ' now has ' + unicode(banco.get_karma(var)) + ' points of karma')
 
 def do_slack(r):
 	var = len(r.group(2)) - 1
@@ -230,7 +233,10 @@ def do_slack(r):
 def do_dec_karma(resultm):
 	var = resultm.group(1)
 	banco.decrement_karma(var)
-	sendmsg(var + ' now has ' + unicode(banco.get_karma(var)) + ' points of karma')
+	if var == nick:
+		sendmsg('tenho ' + unicode(banco.get_karma(var)) + ' pontos de karma agora  :(')
+	else:
+		sendmsg(var + ' now has ' + unicode(banco.get_karma(var)) + ' points of karma')
 
 
 def do_show_karma(resultk):
