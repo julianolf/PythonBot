@@ -13,6 +13,7 @@ DATA_LIMIT = 262144
 DATA_CHUNK = 1024
 
 ENCODING = 'utf-8'
+FALLBACK_ENCODING = 'iso-8859-1'
 
 channel = '#masmorra'
 nick = 'carcereiro'
@@ -121,6 +122,25 @@ class db():
 		return slackers
 
 
+def try_unicode(s, enc_list):
+	for e in enc_list:
+		try:
+			return unicode(s, e)
+		except:
+			pass
+
+	# no success:
+	return unicode(s, enc_list[0], 'replace')
+
+def data_as_unicode(resp, s):
+	info = resp.info()
+	try:
+		ctype,charset = info['Content-Type'].split('charset=')  
+	except:
+		charset = ENCODING
+
+	return try_unicode(s, [charset, ENCODING, FALLBACK_ENCODING])
+
 class html:
 	def __init__(self, url):
 		self.url = url
@@ -139,10 +159,10 @@ class html:
 		print 'content type: %r' % (ctype)
 
 		if ctype.startswith('image/'):
-			return "olha, uma imagem!"
+			return u"olha, uma imagem!"
 
 		if ctype.startswith('audio/'):
-			return "eu não tenho ouvidos, seu insensível!"
+			return u"eu não tenho ouvidos, seu insensível!"
 
 		if 'html' in ctype or 'xml' in ctype:
 			title_pattern = re.compile(r"<title[^>]*?>(.*?)< */ *title *>", re.UNICODE|re.MULTILINE|re.DOTALL|re.IGNORECASE)
@@ -157,16 +177,19 @@ class html:
 
 				data += d
 
-				title_search = title_pattern.search(data)
+				udata = data_as_unicode(self.urlObj, data)
+
+				title_search = title_pattern.search(udata)
 				if title_search is not None:
 					title = title_search.group(1)
 					title = title.strip().replace("\n"," ").replace("\r", " ")
 					title = re.sub("&#?\w+;", "", title)
-					return "[ %s ]" % (title)
+					print 'title: ',repr(title)
+					return u"[ %s ]" % (title)
 			# no title found
 			return None
 
-		return "%s? o que é isso?" % (ctype)
+		return u"%s? o que é isso?" % (ctype)
 
 
 password = sys.argv[1]
@@ -236,14 +259,14 @@ def do_url(url_search):
 			parser = html(url)
 			t = parser.title()
 		except urllib2.HTTPError,e:
-			t = "ui. erro. o servidor não gosta de mim (%s)" % (unicode(e))
+			t = u"ui. erro. o servidor não gosta de mim (%s)" % (unicode(e))
 		except Exception,e:
 			print "Unexpected error:", sys.exc_info()[0]
 			traceback.print_exc()
-			t = "acho que algo explodiu aqui. :("
+			t = u"acho que algo explodiu aqui. :("
 
 		if not t:
-			t = "não consegui achar o título. desculpa tio  :("
+			t = u"não consegui achar o título. desculpa tio  :("
 
 		sendmsg(t)
 		banco.increment_url( nick )
@@ -251,6 +274,7 @@ def do_url(url_search):
 		sendmsg('[ Failed ]')
 		print url
 		print "Unexpected error:", sys.exc_info()[0]
+		traceback.print_exc()
 
 regexes = [
 	(':([a-zA-Z0-9\_]+)!.* PRIVMSG.* :(.*)$', do_slack),
@@ -287,7 +311,8 @@ while True:
 	if re.search(':[!@]help', buffer, re.UNICODE) is not None or re.search(':'+nick+'[ ,:]+help', buffer, re.UNICODE) is not None:
 		sendmsg('@karmas, @urls, @slackers\r\n')
 
-	msg = unicode(buffer, ENCODING, 'replace')
+	msg = try_unicode(buffer, [ENCODING, FALLBACK_ENCODING])
+
 	for exp,fn in compiled_res:
 		r = exp.search(msg)
 		if r:
