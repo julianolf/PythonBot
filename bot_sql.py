@@ -258,7 +258,7 @@ def do_urls(r):
 
 def do_url(url_search):
 	try:
-		url  = url_search.group(2)
+		url  = url_search.group(2).encode('utf-8')
 		nick = url_search.group(1)
 		print 'url: %r' % (url)
 		try:
