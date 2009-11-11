@@ -264,12 +264,13 @@ def do_url(url_search):
 		try:
 			parser = html(url)
 			t = parser.title()
-		except urllib2.HTTPError,e:
-			t = u"ui. erro. o servidor não gosta de mim (%s)" % (unicode(e))
+		except urllib2.URLError,e:
+			traceback.print_exc()
+			t = u"ui. erro. o servidor não gosta de mim (%r)" % (e)
 		except Exception,e:
 			print "Unexpected error:", sys.exc_info()[0]
 			traceback.print_exc()
-			t = u"acho que algo explodiu aqui. :("
+			t = u"acho que algo explodiu aqui. :( -- %r" % (e)
 
 		if not t:
 			t = u"não consegui achar o título. desculpa tio  :("
