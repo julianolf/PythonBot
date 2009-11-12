@@ -265,12 +265,12 @@ def do_url(url_search):
 			parser = html(url)
 			t = parser.title()
 		except urllib2.URLError,e:
+			t = u"ui. erro. o servidor não gosta de mim (%s)" % (str(e))
 			traceback.print_exc()
-			t = u"ui. erro. o servidor não gosta de mim (%r)" % (e)
 		except Exception,e:
+			t = u"acho que algo explodiu aqui. :( -- %s" % (str(e))
 			print "Unexpected error:", sys.exc_info()[0]
 			traceback.print_exc()
-			t = u"acho que algo explodiu aqui. :( -- %r" % (e)
 
 		if not t:
 			t = u"não consegui achar o título. desculpa tio  :("
@@ -291,10 +291,10 @@ regexes = [
 	('PRIVMSG.*[: ]\@karmas', do_dump_karmas),
 	('PRIVMSG.*[: ]\@slackers', do_slackers),
 	('PRIVMSG.*[: ]\@urls', do_urls),
-	('PRIVMSG.*[: ]ronaldo!', lambda r: sendmsg('brilha muito nu curintia!')),
-	('PRIVMSG.*[: ]curintia!', lambda r: sendmsg('brilha muito no ronaldo!')),
-	('PRIVMSG.*[: ]coraldo!', lambda r: sendmsg('brilha muito no ronintia!')),
-	('PRIVMSG.*[: ]jip(e|inho) +tomb(a|ou)', lambda r: sendmsg('nao fala em jipe tombar!')),
+	('PRIVMSG.*[: ]ronaldo!', lambda r: sendmsg(u'brilha muito nu curintia!')),
+	('PRIVMSG.*[: ]curintia!', lambda r: sendmsg(u'brilha muito no ronaldo!')),
+	('PRIVMSG.*[: ]coraldo!', lambda r: sendmsg(u'brilha muito no ronintia!')),
+	('PRIVMSG.*[: ]jip(e|inho) +tomb(a|ou)', lambda r: sendmsg(u'nao fala em jipe tombar!')),
 	('PRIVMSG.*[: ](bot|carcereiro) burro', lambda r: sendmsg(":'(")),
 	(':([a-zA-Z0-9\_]+)!.* PRIVMSG .*?(https?://[^ \t>\n\r]+)', do_url),
 	('PRIVMSG.*[: ](carcereiro|carcy)', lambda r: sendmsg('eu?')),
