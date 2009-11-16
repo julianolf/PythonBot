@@ -80,14 +80,21 @@ class db():
 		if not self.insert_slack(nome,total):
 			self.cursor.execute("UPDATE slack SET total = total + %d where nome = '%s' and data = '%s' ;" % (total,nome,time.strftime("%Y-%m-%d", time.localtime())))
 			self.conn.commit()
-	def get_karmas_count(self):
-		self.cursor.execute('SELECT nome,total FROM karma order by total desc')
+	def get_karmas_count(self, desc=True, max_len=400):
+		q = 'SELECT nome,total FROM karma order by total'
+		if desc:
+			q += ' desc'
+		self.cursor.execute(q)
 		karmas = ''
 		for linha in self.cursor:
+			item = (linha[0]) + ' = ' + unicode(linha[1])
 			if len(karmas) == 0:
-				karmas = (linha[0]) + ' = ' + unicode(linha[1])
+				append = item
 			else:
-				karmas = karmas + ', ' + (linha[0]) + ' = ' + unicode(linha[1])
+				append = ', ' + item
+			if len(karmas) + len(append) > max_len:
+				break
+			karmas += append
 		return karmas
 	def get_karmas(self):
 		self.cursor.execute('SELECT nome FROM karma order by total desc')
@@ -248,7 +255,8 @@ def do_show_karma(resultk):
 		sendmsg(var + ' doesn\'t have any point of karma')
 
 def do_dump_karmas(r):
-	sendmsg('karmas : ' + banco.get_karmas_count())
+	sendmsg('high karmas: ' + banco.get_karmas_count(True))
+	sendmsg('low karmas: ' + banco.get_karmas_count(False))
 
 def do_slackers(r):
 	sendmsg('slackers in chars : ' + banco.get_slacker_count())
