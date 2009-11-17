@@ -308,8 +308,8 @@ def do_url(url_search):
 regexes = [
 	(':([a-zA-Z0-9\_]+)!.* PRIVMSG.* :(.*)$', do_slack),
 	('(?i)PRIVMSG.*[: ](g|google|)wave--', lambda r: sendmsg(u'o Google Wave é uma merda mesmo, todo mundo já sabe') or True),
-	('PRIVMSG.*[: ](\w\w+)\+\+', do_karma),
-	('PRIVMSG.*[: ](\w\w+)\-\-', do_dec_karma),
+	('PRIVMSG.*[: ](\w(\w|[.-_])+)\+\+', do_karma),
+	('PRIVMSG.*[: ](\w(\w|[.-_])+)\-\-', do_dec_karma),
 	('PRIVMSG.*[: ](\w\w+) *(\+|-)= *([0-9]+)', do_karma_sum),
 	('PRIVMSG.*:karma (\w+)', do_show_karma),
 	('PRIVMSG.*[: ]\@karmas', do_dump_karmas),
