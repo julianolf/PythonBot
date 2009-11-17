@@ -50,14 +50,14 @@ class db():
 		except:
 			#print "Unexpected error:", sys.exc_info()[0]
 			return False
+	def change_karma(self,nome,amount):
+		if not self.insert_karma(nome,amount):
+			self.cursor.execute("UPDATE karma SET total = total + (%d) where nome = '%s';" % (amount, nome))
+			self.conn.commit()
 	def increment_karma(self,nome):
-		if not self.insert_karma(nome,1):
-			self.cursor.execute("UPDATE karma SET total = total + 1 where nome = '%s';" % (nome))
-			self.conn.commit()
+		return self.change_karma(nome, 1)
 	def decrement_karma(self,nome):
-		if not self.insert_karma(nome,-1):
-			self.cursor.execute("UPDATE karma SET total = total - 1 where nome = '%s';" % (nome))
-			self.conn.commit()
+		return self.change_karma(nome, -1)
 	def insert_url(self,nome,total):
 		try:
 			self.cursor.execute("INSERT INTO url(nome,total) VALUES ('%s', %d );" % (nome,total))
@@ -229,6 +229,20 @@ def do_karma(r):
 	else:
 		sendmsg(var + ' now has ' + unicode(banco.get_karma(var)) + ' points of karma')
 
+def do_karma_sum(r):
+	var,sign,amount = r.groups()
+	amount = int(amount)
+	if amount > 20:
+		sendmsg(u'%d pontos de uma vez? tá doido!?' % (amount))
+		return
+	if amount > 5:
+		sendmsg(u'%d pontos de uma vez é demais' % (amount))
+		return
+	if sign == '-':
+		amount = -amount
+	banco.change_karma(var, amount)
+	sendmsg(var + ' now has ' + unicode(banco.get_karma(var)) + ' points of karma')
+
 def do_slack(r):
 	var = len(r.group(2)) - 1
 	nick = r.group(1)
@@ -296,6 +310,7 @@ regexes = [
 	('(?i)PRIVMSG.*[: ](g|google|)wave--', lambda r: sendmsg(u'o Google Wave é uma merda mesmo, todo mundo já sabe') or True),
 	('PRIVMSG.*[: ](\w\w+)\+\+', do_karma),
 	('PRIVMSG.*[: ](\w\w+)\-\-', do_dec_karma),
+	('PRIVMSG.*[: ](\w\w+) *(\+|-)= *([0-9]+)', do_karma_sum),
 	('PRIVMSG.*:karma (\w+)', do_show_karma),
 	('PRIVMSG.*[: ]\@karmas', do_dump_karmas),
 	('PRIVMSG.*[: ]\@slackers', do_slackers),
