@@ -235,7 +235,7 @@ def do_karma_sum(r):
 	if amount > 20:
 		sendmsg(u'%d pontos de uma vez? tá doido!?' % (amount))
 		return
-	if amount > 5:
+	if amount > 1:
 		sendmsg(u'%d pontos de uma vez é demais' % (amount))
 		return
 	if sign == '-':
