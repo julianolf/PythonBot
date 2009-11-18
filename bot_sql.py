@@ -320,7 +320,7 @@ regexes = [
 	('(?i)PRIVMSG.*[: ]coraldo!', lambda r: sendmsg(u'brilha muito no ronintia!')),
 	('(?i)PRIVMSG.*[: ]jip(e|inho) +tomb(a|ou)', lambda r: sendmsg(u'nao fala em jipe tombar!')),
 	('(?i)PRIVMSG.*[: ](bot|carcereiro) burro', lambda r: sendmsg(":'(")),
-	(':([a-zA-Z0-9\_]+)!.* PRIVMSG .*?(https?://[^ \t>\n\r]+)', do_url),
+	(':([a-zA-Z0-9\_]+)!.* PRIVMSG .*?(https?://[^ \t>\n\r\x01-\x1f]+)', do_url),
 	('(?i)PRIVMSG.*[: ](carcereiro|carcy)', lambda r: sendmsg('eu?')),
 ]
 
