@@ -338,7 +338,7 @@ while True:
 	buffer = sock.recv(2040)
 	if not buffer:
 		break
-	print buffer
+	print repr(buffer)
 
 	if buffer.find('PING') != -1: 
 		sock.send('PONG ' + buffer.split() [1] + '\r\n')
