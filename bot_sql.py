@@ -308,7 +308,7 @@ def do_url(url_search):
 
 regexes = [
 	(':([a-zA-Z0-9\_]+)!.* PRIVMSG.* :(.*)$', do_slack),
-	('(?i)PRIVMSG.*[: ](g|google|)wave--', lambda r: sendmsg(u'o Google Wave é uma merda mesmo, todo mundo já sabe') or True),
+	('''(?i)PRIVMSG.*[: ](g|google|)\.*wave--''', lambda r: sendmsg(u'o Google Wave é uma merda mesmo, todo mundo já sabe') or True),
 	('PRIVMSG.*[: ](\w(\w|[._-])+)\+\+', do_karma),
 	('PRIVMSG.*[: ](\w(\w|[._-])+)\-\-', do_dec_karma),
 	('PRIVMSG.*[: ](\w\w+) *(\+|-)= *([0-9]+)', do_karma_sum),
@@ -319,6 +319,9 @@ regexes = [
 	('(?i)PRIVMSG.*[: ]ronaldo!', lambda r: sendmsg(u'brilha muito nu curintia!')),
 	('(?i)PRIVMSG.*[: ]curintia!', lambda r: sendmsg(u'brilha muito no ronaldo!')),
 	('(?i)PRIVMSG.*[: ]coraldo!', lambda r: sendmsg(u'brilha muito no ronintia!')),
+	('''(?i)PRIVMSG [#a-z_-]+ :tu[ -]*dum[\.!]*\r*\n*$''', lambda r: sendmsg(u'PÁ!')),
+	(u'''(?i)PRIVMSG [#a-z_-]+ :o* *meu +pai +(é|e)h* +detetive[\.!]*\r*\n*$''', lambda r: sendmsg(u'mas o teu é despachante')),
+	(u'''(?i)PRIVMSG.*ningu[ée]m f(a|e)z nada!''', lambda r: sendmsg(u'ninguém f%sz nada! NA-DA!' % (r.group(1)))),
 	('(?i)PRIVMSG.*[: ]jip(e|inho) +tomb(a|ou)', lambda r: sendmsg(u'nao fala em jipe tombar!')),
 	('(?i)PRIVMSG.*[: ](bot|carcereiro) burro', lambda r: sendmsg(":'(")),
 	(':([a-zA-Z0-9\_]+)!.* PRIVMSG .*?(https?://[^ \t>\n\r\x01-\x1f]+)', do_url),
