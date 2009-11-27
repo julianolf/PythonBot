@@ -282,6 +282,7 @@ def do_url(url_search):
 	try:
 		url  = url_search.group(2).encode('utf-8')
 		nick = url_search.group(1)
+		print "Getting URL %r ..." % (url)
 		print 'url: %r' % (url)
 		try:
 			parser = html(url)
