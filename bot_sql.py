@@ -324,6 +324,7 @@ regexes = [
 	(u'''(?i)PRIVMSG.*ningu[ée]m f(a|e)z nada!''', lambda r: sendmsg(u'ninguém f%sz nada! NA-DA!' % (r.group(1)))),
 	('(?i)PRIVMSG.*[: ]jip(e|inho) +tomb(a|ou)', lambda r: sendmsg(u'nao fala em jipe tombar!')),
 	('(?i)PRIVMSG.*[: ](bot|carcereiro) burro', lambda r: sendmsg(":'(")),
+	('PRIVMSG.*[: ]/wb/', lambda r: sendmsg(u'eu não tenho acesso ao /wb/, seu insensível!')),
 	(':([a-zA-Z0-9\_]+)!.* PRIVMSG .*?(https?://[^ \t>\n\r\x01-\x1f]+)', do_url),
 	('(?i)PRIVMSG.*[: ](carcereiro|carcy)', lambda r: sendmsg('eu?')),
 ]
