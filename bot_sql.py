@@ -230,43 +230,12 @@ sendcmd('NICKSERV', ['IDENTIFY', password])
 sendcmd('JOIN', [channel])
 
 
-def do_karma(r):
-	var = r.group(1)
-	banco.increment_karma(var)
-	if var == nick:
-		sendmsg('eu sou foda! ' + unicode(banco.get_karma(var)) + ' pontos de karma')
-	else:
-		sendmsg(var + ' now has ' + unicode(banco.get_karma(var)) + ' points of karma')
-
-def do_karma_sum(r):
-	var,sign,amount = r.groups()
-	amount = int(amount)
-	if amount > 20:
-		sendmsg(u'%d pontos de uma vez? tá doido!?' % (amount))
-		return
-	if amount > 1:
-		sendmsg(u'%d pontos de uma vez é demais' % (amount))
-		return
-	if sign == '-':
-		amount = -amount
-	banco.change_karma(var, amount)
-	sendmsg(var + ' now has ' + unicode(banco.get_karma(var)) + ' points of karma')
-
 def do_slack(r):
 	var = len(r.group(2)) - 1
 	nick = r.group(1)
 	banco.increment_slack(nick,var)
 	# continue handling other regexps
 	return True
-
-
-def do_dec_karma(resultm):
-	var = resultm.group(1)
-	banco.decrement_karma(var)
-	if var == nick:
-		sendmsg('tenho ' + unicode(banco.get_karma(var)) + ' pontos de karma agora  :(')
-	else:
-		sendmsg(var + ' now has ' + unicode(banco.get_karma(var)) + ' points of karma')
 
 
 def do_show_karma(resultk):
@@ -369,11 +338,48 @@ def personal_msg_on_channel(m, r, reply):
 	m.text = r.group(1)
 	handle_personal_msg(m, nick_reply_func(reply, m.sender_nick))
 
+
+### channel-message handlers:
+
+def do_karma(m, r, reply):
+	var = r.group(1)
+	banco.increment_karma(var)
+	if var == nick:
+		reply('eu sou foda! ' + unicode(banco.get_karma(var)) + ' pontos de karma')
+	else:
+		reply(var + ' now has ' + unicode(banco.get_karma(var)) + ' points of karma')
+
+def do_dec_karma(m, r, reply):
+	var = r.group(1)
+	banco.decrement_karma(var)
+	if var == nick:
+		reply('tenho ' + unicode(banco.get_karma(var)) + ' pontos de karma agora  :(')
+	else:
+		reply(var + ' now has ' + unicode(banco.get_karma(var)) + ' points of karma')
+
+def do_karma_sum(m, r, reply):
+	var,_,sign,amount = r.groups()
+	amount = int(amount)
+	if amount > 20:
+		reply(u'%d pontos de uma vez? tá doido!?' % (amount))
+		return
+	if amount > 1:
+		reply(u'%d pontos de uma vez é demais' % (amount))
+		return
+	if sign == '-':
+		amount = -amount
+	banco.change_karma(var, amount)
+	reply(var + ' now has ' + unicode(banco.get_karma(var)) + ' points of karma')
+
+
 # list of (regex, function) pairs
 # the functions should accept three args: the incoming message, and the regexp match object, and a "reply function"
 # to send replies.
 # if the handler function return a false value (0, None, False, etc), it will stop the regexp processing
 _channel_res = [
+	('\\b(\w(\w|[._-])+)\+\+', do_karma),
+	('\\b(\w(\w|[._-])+)\-\-', do_dec_karma),
+	('\\b(\w(\w|[._-])+) *(\+|-)= *([0-9]+)', do_karma_sum),
 	('''(?i)\\b(g|google|)\.*wave--''', lambda m,r,reply: reply(u'o Google Wave é uma merda mesmo, todo mundo já sabe') or True),
 	('^carcereiro[:,] *(.*)', personal_msg_on_channel),
 	('carcereiro|carcy', lambda m,r,reply: reply(u"eu?")),
@@ -466,9 +472,6 @@ def cmd_received(r):
 regexes = [
 	('^((:[^ ]* +)?)([a-zA-Z]+) +(([^:][^ ]* +)*)((:.*)?)\r*\n*$', cmd_received),
 	(':([a-zA-Z0-9\_]+)!.* PRIVMSG.* :(.*)$', do_slack),
-	('PRIVMSG.*[: ](\w(\w|[._-])+)\+\+', do_karma),
-	('PRIVMSG.*[: ](\w(\w|[._-])+)\-\-', do_dec_karma),
-	('PRIVMSG.*[: ](\w\w+) *(\+|-)= *([0-9]+)', do_karma_sum),
 	('PRIVMSG.*:karma (\w+)', do_show_karma),
 	('PRIVMSG.*[: ]\@karmas', do_dump_karmas),
 	('PRIVMSG.*[: ]\@slackers', do_slackers),
