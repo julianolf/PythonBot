@@ -248,33 +248,6 @@ def do_slackers(r):
 def do_urls(r):
 	sendmsg('users : ' + banco.get_urls_count())
 
-def do_url(url_search):
-	try:
-		url  = url_search.group(2).encode('utf-8')
-		nick = url_search.group(1)
-		print "*** Getting URL %r ..." % (url)
-		print '*** url: %r' % (url)
-		try:
-			parser = html(url)
-			t = parser.title()
-		except urllib2.URLError,e:
-			t = u"ui. erro. o servidor não gosta de mim (%s)" % (str(e))
-			traceback.print_exc()
-		except Exception,e:
-			t = u"acho que algo explodiu aqui. :( -- %s" % (str(e))
-			print "*** Unexpected error:", sys.exc_info()[0]
-			traceback.print_exc()
-
-		if not t:
-			t = u"não consegui achar o título. desculpa tio  :("
-
-		sendmsg(t)
-		banco.increment_url( nick )
-	except:
-		sendmsg('[ Failed ]')
-		print url
-		print "*** Unexpected error:", sys.exc_info()[0]
-		traceback.print_exc()
 
 sender_re = re.compile('([^!@]+)((![^!@]+)?)((@[^!@]+)?)')
 
@@ -380,6 +353,33 @@ def do_karma_sum(m, r, reply):
 	banco.change_karma(var, amount)
 	reply(var + ' now has ' + unicode(banco.get_karma(var)) + ' points of karma')
 
+def do_url(m, r, reply):
+	try:
+		url  = r.group(1).encode('utf-8')
+		nick = m.sender_nick
+		print "*** Getting URL %r ..." % (url)
+		print '*** url: %r' % (url)
+		try:
+			parser = html(url)
+			t = parser.title()
+		except urllib2.URLError,e:
+			t = u"ui. erro. o servidor não gosta de mim (%s)" % (str(e))
+			traceback.print_exc()
+		except Exception,e:
+			t = u"acho que algo explodiu aqui. :( -- %s" % (str(e))
+			print "*** Unexpected error:", sys.exc_info()[0]
+			traceback.print_exc()
+
+		if not t:
+			t = u"não consegui achar o título. desculpa tio  :("
+
+		sendmsg(t)
+		banco.increment_url( nick )
+	except:
+		sendmsg('[ Failed ]')
+		print url
+		print "*** Unexpected error:", sys.exc_info()[0]
+		traceback.print_exc()
 
 # list of (regex, function) pairs
 # the functions should accept three args: the incoming message, and the regexp match object, and a "reply function"
@@ -388,6 +388,8 @@ def do_karma_sum(m, r, reply):
 _channel_res = [
 	('(.*)', lambda m,r,reply: sys.stdout.write("got channel message: %r, %r\n" % (m, r.groups())) or True ),
 	('(.*)', do_slack),
+
+	('(https?://[^ \t>\n\r\x01-\x1f]+)', do_url),
 
 	('\\b(\w(\w|[._-])+)\+\+', do_karma),
 	('\\b(\w(\w|[._-])+)\-\-', do_dec_karma),
@@ -503,7 +505,6 @@ regexes = [
 	('PRIVMSG.*[: ]\@karmas', do_dump_karmas),
 	('PRIVMSG.*[: ]\@slackers', do_slackers),
 	('PRIVMSG.*[: ]\@urls', do_urls),
-	(':([a-zA-Z0-9\_]+)!.* PRIVMSG .*?(https?://[^ \t>\n\r\x01-\x1f]+)', do_url),
 ]
 
 compiled_res = []
