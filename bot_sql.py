@@ -338,9 +338,34 @@ class Message:
 		return '<message: cmd %r from [%r]![%r]@[%r]. args: %r' % (self.cmd, self.sender_nick, self.sender_user, self.sender_host, self.args)
 
 
+# list of (regex, function) pairs
+# the functions should accept two args: the incoming message, and the regexp match object
+# if the function return a false value (0, None, False, etc), it will stop the regexp processing
+_channel_res = [
+	('(.*)', lambda m,r: sys.stdout.write("got channel message: %r, %r\n" % (m, r.groups())) or True ),
+	('lala', lambda m,r: sys.stdout.write("lala\n") or True),
+	('lalala', lambda m,r: sys.stdout.write("lalala\n")),
+]
+
+channel_res = [(re.compile(r, re.UNICODE), fn) for (r, fn) in _channel_res]
+
+
+
+def handle_channel_msg(m):
+	for r,fn in channel_res:
+		match = r.search(m.msg)
+		if match:
+			r = fn(m, match)
+			if not r:
+				break
+
 def handle_privmsg(m):
-	target,msg = m.args
 	print "***** privmsg received: %r" % (m)
+	# set additional useful message attributes
+	m.target,m.msg = m.args
+	if m.target == channel:
+		handle_channel_msg(m)
+
 
 def handle_ping(m):
 	print "***** got PING: %r" % (m)
