@@ -216,18 +216,18 @@ sock.connect((server, 6667))
 sock.settimeout(900)
 
 # initially use nick_ (I hope nobody will connect using it :)
-sock.send('NICK %s_ \r\n' % nick)
-sock.send('USER %s \'\' \'\' :%s\r\n' % (nick, 'python'))
+sendcmd('NICK', ['%s_' % (nick)])
+sendcmd('USER', [nick, "''", "''"], 'python')
 
 # regain nick, if it is in use
-sock.send('NICKSERV REGAIN %s %s\r\n' % (nick, password))
+sendcmd('NICKSERV', ['REGAIN', nick, password])
 
 # change to the real nick
-sock.send('NICK %s \r\n' % nick)
-sock.send('NICKSERV IDENTIFY %s\r\n' % (password))
+sendcmd('NICK', [nick])
+sendcmd('NICKSERV', ['IDENTIFY', password])
 
 # join the channel
-sock.send('JOIN %s \r\n' % channel)
+sendcmd('JOIN', [channel])
 
 
 def do_karma(r):
@@ -318,11 +318,11 @@ def do_url(url_search):
 sender_re = re.compile('([^!@]+)((![^!@]+)?)((@[^!@]+)?)')
 
 class Message:
-	def __init__(self, sender, cmd, middleargs, arg):
+	def __init__(self, sender, cmd, middleargs, trail):
 		self.sender = sender
 		self.cmd = cmd
 		self.middleargs = middleargs
-		self.arg = arg
+		self.trail = trail
 
 		m = sender_re.match(self.sender)
 		if not m:
@@ -335,7 +335,7 @@ class Message:
 			self.sender_host = m.group(4).lstrip('@')
 
 	def __repr__(self):
-		return '<message: cmd %r from [%r]![%r]@[%r]. middle: %r. arg: %r>' % (self.cmd, self.sender_nick, self.sender_user, self.sender_host, self.middleargs, self.arg)
+		return '<message: cmd %r from [%r]![%r]@[%r]. middle: %r. trail: %r>' % (self.cmd, self.sender_nick, self.sender_user, self.sender_host, self.middleargs, self.trail)
 
 
 def handle_privmsg(m):
@@ -353,10 +353,15 @@ cmd_handlers = {
 
 def cmd_received(r):
 	groups = r.groups()
-	sender,cmd,middle,_,trailing = groups
+	sender,cmd,middle,_,trailing,_ = groups
 	middleargs = middle.split()
 
-	m = Message(sender, cmd, middleargs, trailing)
+	if trailing == '':
+		trail = None
+	else:
+		# strip ':' prefix
+		trail = trailing[1:]
+	m = Message(sender, cmd, middleargs, trail)
 	print '*** cmd received: ', repr(m)
 
 	h = cmd_handlers.get(m.cmd.lower())
@@ -369,7 +374,7 @@ def cmd_received(r):
 
 # regexes for IRC commands:
 regexes = [
-	('^:([^ ]*) +([a-zA-Z]+) +(([^:][^ ]* +)*):(.*)\r*\n*$', cmd_received),
+	('^:([^ ]*) +([a-zA-Z]+) +(([^:][^ ]* +)*)((:.*)?)\r*\n*$', cmd_received),
 	(':([a-zA-Z0-9\_]+)!.* PRIVMSG.* :(.*)$', do_slack),
 	('''(?i)PRIVMSG.*[: ](g|google|)\.*wave--''', lambda r: sendmsg(u'o Google Wave é uma merda mesmo, todo mundo já sabe') or True),
 	('PRIVMSG.*[: ](\w(\w|[._-])+)\+\+', do_karma),
