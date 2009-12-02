@@ -368,7 +368,7 @@ def do_show_karma(m, r, reply):
 	if points is not None:
 		reply(var + ' have ' + unicode(points) + ' points of karma')
 	else:
-		reply(var + ' doesn\'t have any point of karma')
+		reply(var + " doesn't have any point of karma")
 
 def do_dump_karmas(m, r, reply):
 	reply('high karmas: ' + banco.get_karmas_count(True))
@@ -391,7 +391,7 @@ _channel_res = [
 	('(.*)', lambda m,r,reply: sys.stdout.write("got channel message: %r, %r\n" % (m, r.groups())) or True ),
 	('(.*)', do_slack),
 
-	('^@*karma (\w+)$', do_show_karma),
+	(r'^@*karma (\w+)$', do_show_karma),
 	('[@!]karmas', do_dump_karmas),
 	('[@!]slackers', do_slackers),
 	('[@!]urls', do_urls),
@@ -399,26 +399,26 @@ _channel_res = [
 
 	('(https?://[^ \t>\n\r\x01-\x1f]+)', do_url),
 
-	('\\b(\w(\w|[._-])+)\+\+', do_karma),
-	('\\b(\w(\w|[._-])+)\-\-', do_dec_karma),
-	('\\b(\w(\w|[._-])+) *(\+|-)= *([0-9]+)', do_karma_sum),
-	('''(?i)\\b(g|google|)\.*wave--''', lambda m,r,reply: reply(u'o Google Wave é uma merda mesmo, todo mundo já sabe') or True),
+	(r'\b(\w(\w|[._-])+)\+\+', do_karma),
+	(r'\b(\w(\w|[._-])+)\-\-', do_dec_karma),
+	(r'\b(\w(\w|[._-])+) *(\+|-)= *([0-9]+)', do_karma_sum),
+	(r'(?i)\b(g|google|)\.*wave--', lambda m,r,reply: reply(u'o Google Wave é uma merda mesmo, todo mundo já sabe') or True),
 
 	(u'o carcereiro roubou p[ãa]o na casa do jo[ãa]o', lambda m,r,reply: send_nick_reply(reply, m.sender_nick, u'quem, eu?')),
 
 	('lala', lambda m,r,reply: sys.stdout.write("lala\n") or True),
 	('lalala', lambda m,r,reply: sys.stdout.write("lalala\n")),
 
-	('(?i)\\bronaldo!', lambda m,r,reply: reply(u'brilha muito nu curintia!')),
-	('(?i)\\bcurintia!', lambda m,r,reply: reply(u'brilha muito no ronaldo!')),
-	('(?i)\\bcoraldo!', lambda m,r,reply: reply(u'brilha muito no ronintia!')),
+	(r'(?i)\bronaldo!', lambda m,r,reply: reply(u'brilha muito nu curintia!')),
+	(r'(?i)\bcurintia!', lambda m,r,reply: reply(u'brilha muito no ronaldo!')),
+	(r'(?i)\bcoraldo!', lambda m,r,reply: reply(u'brilha muito no ronintia!')),
 	('^ *tu[ -]*dum[\.!]*$''', lambda m,r,reply: reply(u'PÁ!')),
 	(u'(?i)^o* *meu +pai +(é|e)h* +detetive[\.!]*$', lambda m,r,reply: reply(u'mas o teu é despachante')),
 	(u'(?i)ningu[ée]m f(a|e)z nada!', lambda m,r,reply: reply(u'ninguém f%sz nada! NA-DA!' % (r.group(1)))),
-	('(?i)\\bjip(e|inho) +tomb(a|ou)', lambda m,r,reply: reply(u'nao fala em jipe tombar!')),
-	('(?i)\\b(bot|carcereiro) burro', lambda m,r,reply: reply(":'(")),
+	(r'(?i)\bjip(e|inho) +tomb(a|ou)', lambda m,r,reply: reply(u'nao fala em jipe tombar!')),
+	(r'(?i)\b(bot|carcereiro) burro', lambda m,r,reply: reply(":'(")),
 
-	('\\b/wb/', lambda m,r,reply: reply(u'eu não tenho acesso ao /wb/, seu insensível!')),
+	(r'\b/wb/', lambda m,r,reply: reply(u'eu não tenho acesso ao /wb/, seu insensível!')),
 
 	('^carcereiro[:,] *(.*)', personal_msg_on_channel),
 	('carcereiro|carcy', lambda m,r,reply: reply(u"eu?")),
