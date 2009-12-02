@@ -380,6 +380,8 @@ def do_slackers(m, r, reply):
 def do_urls(m, r, reply):
 	reply('users : ' + banco.get_urls_count())
 
+def do_help(m, r, reply):
+	reply('commands: @karma <name>, @karmas, @urls, @slackers')
 
 # list of (regex, function) pairs
 # the functions should accept three args: the incoming message, and the regexp match object, and a "reply function"
@@ -390,9 +392,10 @@ _channel_res = [
 	('(.*)', do_slack),
 
 	('^@*karma (\w+)$', do_show_karma),
-	('@karmas', do_dump_karmas),
-	('@slackers', do_slackers),
-	('@urls', do_urls),
+	('[@!]karmas', do_dump_karmas),
+	('[@!]slackers', do_slackers),
+	('[@!]urls', do_urls),
+	('[@!]help', do_help),
 
 	('(https?://[^ \t>\n\r\x01-\x1f]+)', do_url),
 
@@ -446,6 +449,8 @@ _personal_res = [
 	('^@*karmas', do_dump_karmas),
 	('^@*slackers', do_slackers),
 	('^@*urls', do_urls),
+	('^@*!*help', do_help),
+
 
 	('burro', lambda m,r,reply: reply(":(")),
 	('^ping\?*$', lambda m,r,reply: reply("pong!")),
@@ -539,9 +544,6 @@ def readlines(sock):
 			buf = rest
 
 for line in readlines(sock):
-	if re.search(':[!@]help', line, re.UNICODE) is not None or re.search(':'+nick+'[ ,:]+help', line, re.UNICODE) is not None:
-		sendmsg('@karmas, @urls, @slackers\r\n')
-
 	msg = try_unicode(line, [ENCODING, FALLBACK_ENCODING])
 
 	for exp,fn in compiled_res:
