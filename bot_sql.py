@@ -19,11 +19,13 @@ channel = '#masmorra'
 nick = 'carcereiro'
 server = 'irc.oftc.net' 
 
-def sendcmd(cmd, middle, arg):
-	mid = ''
+def sendcmd(cmd, middle, trail=None):
+	m = '%s ' % (cmd)
 	for a in middle:
-		mid += '%s ' % (a)
-	m = '%s %s:%s\r\n' % (cmd, mid, arg)
+		m += '%s ' % (a)
+	if trail is not None:
+		m += ':%s' % (trail)
+	m += '\r\n'
 	print "*** sending data: %r" % (m)
 	sock.send(m)
 
