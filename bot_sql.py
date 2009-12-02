@@ -19,9 +19,16 @@ channel = '#masmorra'
 nick = 'carcereiro'
 server = 'irc.oftc.net' 
 
+def sendcmd(cmd, middle, arg):
+	mid = ''
+	for a in middle:
+		mid += '%s ' % (a)
+	m = '%s %s:%s\r\n' % (cmd, mid, arg)
+	print "*** sending data: %r" % (m)
+	sock.send(m)
+
 def _sendmsg(who, msg): 
-    s = 'PRIVMSG '+ who + ' :' + unicode(msg) + '\r\n'
-    sock.send(s.encode(ENCODING))
+	sendcmd('PRIVMSG', [who], unicode(msg).encode(ENCODING))
 
 def sendmsg(msg):
     return _sendmsg(channel, msg)
