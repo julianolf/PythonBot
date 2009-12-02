@@ -399,10 +399,11 @@ _channel_res = [
 
 	('(https?://[^ \t>\n\r\x01-\x1f]+)', do_url),
 
+	(r'(?i)\b(g|google|)\.*wave--', lambda m,r,reply: reply(u'o Google Wave é uma merda mesmo, todo mundo já sabe') or True),
+
 	(r'\b(\w(\w|[._-])+)\+\+', do_karma),
 	(r'\b(\w(\w|[._-])+)\-\-', do_dec_karma),
 	(r'\b(\w(\w|[._-])+) *(\+|-)= *([0-9]+)', do_karma_sum),
-	(r'(?i)\b(g|google|)\.*wave--', lambda m,r,reply: reply(u'o Google Wave é uma merda mesmo, todo mundo já sabe') or True),
 
 	(u'o carcereiro roubou p[ãa]o na casa do jo[ãa]o', lambda m,r,reply: send_nick_reply(reply, m.sender_nick, u'quem, eu?')),
 
