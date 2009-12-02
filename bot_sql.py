@@ -338,13 +338,20 @@ class Message:
 		return '<message: cmd %r from [%r]![%r]@[%r]. args: %r' % (self.cmd, self.sender_nick, self.sender_user, self.sender_host, self.args)
 
 
-def send_nick_reply(channel, nick, msg):
-	"""send a "nick:" prefixed message"""
-	_sendmsg(channel, u'%s: %s' % (nick, msg))
+def send_channel_msg(channel, msg):
+	_sendmsg(channel, msg)
 
-def nick_reply_func(channel, nick):
+def channel_reply_func(channel):
+	return lambda msg: send_channel_msg(channel, msg)
+
+def send_nick_reply(orig_reply_func, nick, msg):
+	"""send a "nick:" prefixed message"""
+	orig_reply_func(u'%s: %s' % (nick, msg))
+
+def nick_reply_func(orig_reply_func, nick):
 	"""Create a nick-reply reply function"""
-	return lambda msg: send_nick_reply(channel, nick, msg)
+	return lambda msg: send_nick_reply(orig_reply_func, nick, msg)
+
 
 def send_private_msg(nick, msg):
 	"""Send a private message to a nickname"""
@@ -355,38 +362,50 @@ def private_reply_func(nick):
 	return lambda msg: send_private_msg(nick, msg)
 
 
+def personal_msg_on_channel(m, r, reply):
+	"""Handle nick-prefixed messages on channel like private messages,
+	but reply using a nick prefix on the channel
+	"""
+	m.text = r.group(1)
+	handle_personal_msg(m, nick_reply_func(reply, m.sender_nick))
+
 # list of (regex, function) pairs
-# the functions should accept two args: the incoming message, and the regexp match object
-# if the function return a false value (0, None, False, etc), it will stop the regexp processing
+# the functions should accept three args: the incoming message, and the regexp match object, and a "reply function"
+# to send replies.
+# if the handler function return a false value (0, None, False, etc), it will stop the regexp processing
 _channel_res = [
-	('(.*)', lambda m,r: sys.stdout.write("got channel message: %r, %r\n" % (m, r.groups())) or True ),
-	('lala', lambda m,r: sys.stdout.write("lala\n") or True),
-	('lalala', lambda m,r: sys.stdout.write("lalala\n")),
+	('''(?i)\\b(g|google|)\.*wave--''', lambda m,r,reply: reply(u'o Google Wave é uma merda mesmo, todo mundo já sabe') or True),
+	('^carcereiro[:,] *(.*)', personal_msg_on_channel),
+	('carcereiro|carcy', lambda m,r,reply: reply(u"eu?")),
+	('(.*)', lambda m,r,reply: sys.stdout.write("got channel message: %r, %r\n" % (m, r.groups())) or True ),
+	('lala', lambda m,r,reply: sys.stdout.write("lala\n") or True),
+	('lalala', lambda m,r,reply: sys.stdout.write("lalala\n")),
 ]
 
 channel_res = [(re.compile(r, re.UNICODE), fn) for (r, fn) in _channel_res]
 
 
 
-def handle_channel_msg(m):
+def handle_channel_msg(m, reply_func):
 	for r,fn in channel_res:
-		match = r.search(m.msg)
+		match = r.search(m.text)
 		if match:
-			r = fn(m, match)
+			r = fn(m, match, reply_func)
 			if not r:
 				break
 
 # list of "personal message" res
-# like channel_res, but functions get a third "reply function" parameter, to send
-# replies.
+# like channel_res, but for (private or nick-prefixed) "personal messages"
 _personal_res = [
-	('(.*)', lambda m,r,reply: reply("que foi?")),
+	('^funciona\?$', lambda m,r,reply: reply("sim!")),
+	('burro', lambda m,r,reply: reply(":(")),
+	('(.*)', lambda m,r,reply: reply(u"não entendi")),
 ]
 personal_res = [(re.compile(r, re.UNICODE), fn) for (r, fn) in _personal_res]
 
 def handle_personal_msg(m, reply_func):
 	for r,fn in personal_res:
-		match = r.search(m.msg)
+		match = r.search(m.text)
 		if match:
 			r = fn(m, match, reply_func)
 			if not r:
@@ -395,9 +414,13 @@ def handle_personal_msg(m, reply_func):
 def handle_privmsg(m):
 	print "***** privmsg received: %r" % (m)
 	# set additional useful message attributes
-	m.target,m.msg = m.args
+	m.target,m.text = m.args
+
+	#FIXME: make only the text part be unicode
+	m.target = str(m.target)
+
 	if m.target == channel:
-		handle_channel_msg(m)
+		handle_channel_msg(m, channel_reply_func(channel))
 	elif m.target == nick and m.sender_nick:
 		handle_personal_msg(m, private_reply_func(m.sender_nick))
 
@@ -426,7 +449,9 @@ def cmd_received(r):
 	else:
 		sender = None
 
-	m = Message(sender, cmd, args)
+	#FIXME: make only the text part be unicode
+	sender = str(sender)
+	m = Message(sender, str(cmd), args)
 	print '*** cmd received: ', repr(m)
 
 	h = cmd_handlers.get(m.cmd.lower())
@@ -441,7 +466,6 @@ def cmd_received(r):
 regexes = [
 	('^((:[^ ]* +)?)([a-zA-Z]+) +(([^:][^ ]* +)*)((:.*)?)\r*\n*$', cmd_received),
 	(':([a-zA-Z0-9\_]+)!.* PRIVMSG.* :(.*)$', do_slack),
-	('''(?i)PRIVMSG.*[: ](g|google|)\.*wave--''', lambda r: sendmsg(u'o Google Wave é uma merda mesmo, todo mundo já sabe') or True),
 	('PRIVMSG.*[: ](\w(\w|[._-])+)\+\+', do_karma),
 	('PRIVMSG.*[: ](\w(\w|[._-])+)\-\-', do_dec_karma),
 	('PRIVMSG.*[: ](\w\w+) *(\+|-)= *([0-9]+)', do_karma_sum),
@@ -459,7 +483,6 @@ regexes = [
 	('(?i)PRIVMSG.*[: ](bot|carcereiro) burro', lambda r: sendmsg(":'(")),
 	('PRIVMSG.*[: ]/wb/', lambda r: sendmsg(u'eu não tenho acesso ao /wb/, seu insensível!')),
 	(':([a-zA-Z0-9\_]+)!.* PRIVMSG .*?(https?://[^ \t>\n\r\x01-\x1f]+)', do_url),
-	('(?i)PRIVMSG.*[: ](carcereiro|carcy)', lambda r: sendmsg('eu?')),
 ]
 
 compiled_res = []
