@@ -354,10 +354,10 @@ def do_url(m, r, reply):
 		if not t:
 			t = u"não consegui achar o título. desculpa tio  :("
 
-		sendmsg(t)
+		reply(t)
 		banco.increment_url( nick )
 	except:
-		sendmsg('[ Failed ]')
+		reply('[ Failed ]')
 		print url
 		print "*** Unexpected error:", sys.exc_info()[0]
 		traceback.print_exc()
