@@ -331,6 +331,8 @@ def private_reply_func(nick):
 	return lambda msg: send_private_msg(nick, msg)
 
 
+### channel-message handlers:
+
 def personal_msg_on_channel(m, r, reply):
 	"""Handle nick-prefixed messages on channel like private messages,
 	but reply using a nick prefix on the channel
@@ -338,8 +340,6 @@ def personal_msg_on_channel(m, r, reply):
 	m.text = r.group(1)
 	return handle_personal_msg(m, nick_reply_func(reply, m.sender_nick))
 
-
-### channel-message handlers:
 
 def do_karma(m, r, reply):
 	var = r.group(1)
@@ -384,6 +384,8 @@ _channel_res = [
 	('\\b(\w(\w|[._-])+) *(\+|-)= *([0-9]+)', do_karma_sum),
 	('''(?i)\\b(g|google|)\.*wave--''', lambda m,r,reply: reply(u'o Google Wave é uma merda mesmo, todo mundo já sabe') or True),
 	('^carcereiro[:,] *(.*)', personal_msg_on_channel),
+
+	(u'o carcereiro roubou p[ãa]o na casa do jo[ãa]o', lambda m,r,reply: send_nick_reply(reply, m.sender_nick, u'quem, eu?')),
 	('carcereiro|carcy', lambda m,r,reply: reply(u"eu?")),
 
 	('lala', lambda m,r,reply: sys.stdout.write("lala\n") or True),
@@ -397,6 +399,8 @@ _channel_res = [
 	(u'(?i)ningu[ée]m f(a|e)z nada!', lambda m,r,reply: reply(u'ninguém f%sz nada! NA-DA!' % (r.group(1)))),
 	('(?i)\\bjip(e|inho) +tomb(a|ou)', lambda m,r,reply: reply(u'nao fala em jipe tombar!')),
 	('(?i)\\b(bot|carcereiro) burro', lambda m,r,reply: reply(":'(")),
+
+
 	('\\b/wb/', lambda m,r,reply: reply(u'eu não tenho acesso ao /wb/, seu insensível!')),
 ]
 
@@ -418,11 +422,14 @@ def handle_channel_msg(m, reply_func):
 _personal_res = [
 	('^funciona\?$', lambda m,r,reply: reply("sim!")),
 	('burro', lambda m,r,reply: reply(":(")),
+	('^ping\?*$', lambda m,r,reply: reply("pong!")),
+	(u'^sim[, ]+voc[êe]', lambda m,r,reply: reply(u"eu não!")),
 	('(.*)', lambda m,r,reply: reply(u"não entendi")),
 ]
 personal_res = [(re.compile(r, re.UNICODE), fn) for (r, fn) in _personal_res]
 
 def handle_personal_msg(m, reply_func):
+	print "***** personal msg received. %r" % (m)
 	for r,fn in personal_res:
 		match = r.search(m.text)
 		if match:
