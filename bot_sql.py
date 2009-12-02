@@ -429,13 +429,18 @@ channel_res = [(re.compile(r, re.UNICODE), fn) for (r, fn) in _channel_res]
 
 
 def handle_res(re_list, m, reply_func):
-	for r,fn in re_list:
-		match = r.search(m.text)
-		if match:
-			r = fn(m, match, reply_func)
-			if not r:
-				return r
-	return True
+	try:
+		for r,fn in re_list:
+			match = r.search(m.text)
+			if match:
+				r = fn(m, match, reply_func)
+				if not r:
+					return r
+		return True
+	except Exception,e:
+		reply(u"acho que algo explodiu aqui. :( -- %s" % (str(e)))
+		traceback.print_exc()
+		
 
 def handle_channel_msg(m, reply_func):
 	return handle_res(channel_res, m, reply_func)
@@ -463,6 +468,9 @@ def handle_personal_msg(m, reply_func):
 	print "***** personal msg received. %r" % (m)
 	return handle_res(personal_res, m, reply_func)
 	
+
+#### command handlers:
+
 def handle_privmsg(m):
 	print "***** privmsg received: %r" % (m)
 	# set additional useful message attributes
@@ -487,6 +495,9 @@ cmd_handlers = {
 	'ping':handle_ping,
 }
 
+
+
+### general IRC message handler:
 def cmd_received(r):
 	groups = r.groups()
 	prefix,_,cmd,middle,_,trailing,_ = groups
