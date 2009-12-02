@@ -160,10 +160,10 @@ class html:
 		reqObj = urllib2.Request(self.url, None, self.headers)
 		self.urlObj = urllib2.urlopen(reqObj)
 		self.resp_headers = self.urlObj.info()
-		print 'headers:',repr(self.resp_headers.items())
+		print '*** headers:',repr(self.resp_headers.items())
 
 		ctype = self.resp_headers.get('content-type', '')
-		print 'content type: %r' % (ctype)
+		print '*** content type: %r' % (ctype)
 
 		if ctype.startswith('image/'):
 			return u"olha, uma imagem!"
@@ -191,7 +191,7 @@ class html:
 					title = title_search.group(1)
 					title = title.strip().replace("\n"," ").replace("\r", " ")
 					title = re.sub("&#?\w+;", "", title)
-					print 'title: ',repr(title)
+					print '*** title: ',repr(title)
 					return u"[ %s ]" % (title)
 			# no title found
 			return None
@@ -282,8 +282,8 @@ def do_url(url_search):
 	try:
 		url  = url_search.group(2).encode('utf-8')
 		nick = url_search.group(1)
-		print "Getting URL %r ..." % (url)
-		print 'url: %r' % (url)
+		print "*** Getting URL %r ..." % (url)
+		print '*** url: %r' % (url)
 		try:
 			parser = html(url)
 			t = parser.title()
@@ -292,7 +292,7 @@ def do_url(url_search):
 			traceback.print_exc()
 		except Exception,e:
 			t = u"acho que algo explodiu aqui. :( -- %s" % (str(e))
-			print "Unexpected error:", sys.exc_info()[0]
+			print "*** Unexpected error:", sys.exc_info()[0]
 			traceback.print_exc()
 
 		if not t:
@@ -303,14 +303,59 @@ def do_url(url_search):
 	except:
 		sendmsg('[ Failed ]')
 		print url
-		print "Unexpected error:", sys.exc_info()[0]
+		print "*** Unexpected error:", sys.exc_info()[0]
 		traceback.print_exc()
+
+sender_re = re.compile('([^!@]+)((![^!@]+)?)((@[^!@]+)?)')
+
+class Message:
+	def __init__(self, sender, cmd, middleargs, arg):
+		self.sender = sender
+		self.cmd = cmd
+		self.middleargs = middleargs
+		self.arg = arg
+
+		m = sender_re.match(self.sender)
+		if not m:
+			print "***** sender regexp doesn't match?"
+			self.sender_nick = self.sender
+			self.sender_user = self.sender_host = ''
+		else:
+			self.sender_nick = m.group(1)
+			self.sender_user = m.group(2).lstrip('!')
+			self.sender_host = m.group(4).lstrip('@')
+
+	def __repr__(self):
+		return '<message: cmd %r from [%r]![%r]@[%r]. middle: %r. arg: %r>' % (self.cmd, self.sender_nick, self.sender_user, self.sender_host, self.middleargs, self.arg)
+
+
+def handle_privmsg(m):
+	target, = m.middleargs
+	print "***** privmsg received: %r" % (m)
+
+def handle_ping(m):
+	print "PING %r" % (m)
+
+# handler for each command type. keys are in lower case
+cmd_handlers = {
+	'privmsg':handle_privmsg,
+	'ping':handle_ping,
+}
 
 def cmd_received(r):
 	groups = r.groups()
-	sender,cmd,target,_,trailing = groups
-	
-	print 'cmd received: ',repr(groups)
+	sender,cmd,middle,_,trailing = groups
+	middleargs = middle.split()
+
+	m = Message(sender, cmd, middleargs, trailing)
+	print '*** cmd received: ', repr(m)
+
+	h = cmd_handlers.get(m.cmd.lower())
+	if h:
+		h(m)
+
+	# continue handling the legacy regexps
+	return True
 
 
 # regexes for IRC commands:
@@ -351,14 +396,14 @@ def readlines(sock):
 	while True:
 		data = sock.recv(2040)
 		if not data:
-			print "no returned data. EOF?"
+			print "**** no returned data. EOF?"
 			break
-		print 'raw data: ',repr(data)
+		print '* raw data: ',repr(data)
 		buf += data
 		while newline.search(buf):
 			line,rest = newline.split(buf, 1)
-			print "line: %r" % (line)
-			print "rest: %r" % (rest)
+			print "** line: %r" % (line)
+			print "** rest: %r" % (rest)
 			yield line
 			buf = rest
 
@@ -374,9 +419,14 @@ for line in readlines(sock):
 	for exp,fn in compiled_res:
 		r = exp.search(msg)
 		if r:
-			res = fn(r)
-			if not res:
-				break
+			try:
+				res = fn(r)
+				if not res:
+					break
+			except Exception,e:
+				print "***** Message handler error: "
+				traceback.print_exc()
+				
 
 
 
