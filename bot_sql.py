@@ -414,14 +414,17 @@ channel_res = [(re.compile(r, re.UNICODE), fn) for (r, fn) in _channel_res]
 
 
 
-def handle_channel_msg(m, reply_func):
-	for r,fn in channel_res:
+def handle_res(re_list, m, reply_func):
+	for r,fn in re_list:
 		match = r.search(m.text)
 		if match:
 			r = fn(m, match, reply_func)
 			if not r:
 				return r
 	return True
+
+def handle_channel_msg(m, reply_func):
+	return handle_res(channel_res, m, reply_func)
 
 # list of "personal message" res
 # like channel_res, but for (private or nick-prefixed) "personal messages"
@@ -436,13 +439,7 @@ personal_res = [(re.compile(r, re.UNICODE), fn) for (r, fn) in _personal_res]
 
 def handle_personal_msg(m, reply_func):
 	print "***** personal msg received. %r" % (m)
-	for r,fn in personal_res:
-		match = r.search(m.text)
-		if match:
-			r = fn(m, match, reply_func)
-			if not r:
-				return r
-	return True
+	return handle_res(personal_res, m, reply_func)
 	
 def handle_privmsg(m):
 	print "***** privmsg received: %r" % (m)
