@@ -343,6 +343,9 @@ def personal_msg_on_channel(m, r, reply):
 
 def do_karma(m, r, reply):
 	var = r.group(1)
+	if m.sender_nick == var:
+		send_nick_reply(reply, m.sender_nick, "convencido!")
+		return
 	banco.increment_karma(var)
 	if var == nick:
 		reply('eu sou foda! ' + unicode(banco.get_karma(var)) + ' pontos de karma')
@@ -368,6 +371,9 @@ def do_karma_sum(m, r, reply):
 		return
 	if sign == '-':
 		amount = -amount
+	if m.sender_nick == var and amount > 0:
+		send_nick_reply(reply, m.sender_nick, "convencido!")
+		return
 	banco.change_karma(var, amount)
 	reply(var + ' now has ' + unicode(banco.get_karma(var)) + ' points of karma')
 
