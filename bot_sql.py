@@ -343,7 +343,8 @@ def handle_privmsg(m):
 	print "***** privmsg received: %r" % (m)
 
 def handle_ping(m):
-	print "PING %r" % (m)
+	print "***** got PING: %r" % (m)
+	sendcmd('PONG', [], m.args[0])
 
 # handler for each command type. keys are in lower case
 cmd_handlers = {
@@ -426,9 +427,6 @@ def readlines(sock):
 			buf = rest
 
 for line in readlines(sock):
-	if line.find('PING') != -1:
-		sock.send('PONG ' + line.split() [1] + '\r\n')
-
 	if re.search(':[!@]help', line, re.UNICODE) is not None or re.search(':'+nick+'[ ,:]+help', line, re.UNICODE) is not None:
 		sendmsg('@karmas, @urls, @slackers\r\n')
 
