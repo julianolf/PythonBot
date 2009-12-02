@@ -230,14 +230,6 @@ sendcmd('NICKSERV', ['IDENTIFY', password])
 sendcmd('JOIN', [channel])
 
 
-def do_slack(r):
-	var = len(r.group(2)) - 1
-	nick = r.group(1)
-	banco.increment_slack(nick,var)
-	# continue handling other regexps
-	return True
-
-
 def do_show_karma(resultk):
 	var = resultk.group(1)
 	points = banco.get_karma(var)
@@ -307,6 +299,8 @@ class Message:
 		return '<message: cmd %r from [%r]![%r]@[%r]. args: %r' % (self.cmd, self.sender_nick, self.sender_user, self.sender_host, self.args)
 
 
+### helper functions for replying to messages:
+
 def send_channel_msg(channel, msg):
 	_sendmsg(channel, msg)
 
@@ -332,6 +326,15 @@ def private_reply_func(nick):
 
 
 ### channel-message handlers:
+
+def do_slack(m, r, reply):
+	var = len(m.text)
+	nick = m.sender_nick
+	banco.increment_slack(nick,var)
+
+	# continue handling other regexps
+	return True
+
 
 def personal_msg_on_channel(m, r, reply):
 	"""Handle nick-prefixed messages on channel like private messages,
@@ -384,6 +387,7 @@ def do_karma_sum(m, r, reply):
 # if the handler function return a false value (0, None, False, etc), it will stop the regexp processing
 _channel_res = [
 	('(.*)', lambda m,r,reply: sys.stdout.write("got channel message: %r, %r\n" % (m, r.groups())) or True ),
+	('(.*)', do_slack),
 
 	('\\b(\w(\w|[._-])+)\+\+', do_karma),
 	('\\b(\w(\w|[._-])+)\-\-', do_dec_karma),
@@ -495,7 +499,6 @@ def cmd_received(r):
 # regexes for IRC commands:
 regexes = [
 	('^((:[^ ]* +)?)([a-zA-Z]+) +(([^:][^ ]* +)*)((:.*)?)\r*\n*$', cmd_received),
-	(':([a-zA-Z0-9\_]+)!.* PRIVMSG.* :(.*)$', do_slack),
 	('PRIVMSG.*:karma (\w+)', do_show_karma),
 	('PRIVMSG.*[: ]\@karmas', do_dump_karmas),
 	('PRIVMSG.*[: ]\@slackers', do_slackers),
