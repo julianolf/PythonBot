@@ -473,11 +473,10 @@ def handle_personal_msg(m, reply_func):
 
 def handle_privmsg(m):
 	print "***** privmsg received: %r" % (m)
-	# set additional useful message attributes
-	m.target,m.text = m.args
+	m.target,text = m.args
 
-	#FIXME: make only the text part be unicode
-	m.target = str(m.target)
+	# set additional useful message attributes
+	m.text = try_unicode(text, [ENCODING, FALLBACK_ENCODING])
 
 	if m.target == channel:
 		handle_channel_msg(m, channel_reply_func(channel))
@@ -512,8 +511,6 @@ def cmd_received(r):
 	else:
 		sender = None
 
-	#FIXME: make only the text part be unicode
-	sender = str(sender)
 	m = Message(sender, str(cmd), args)
 	print '*** cmd received: ', repr(m)
 
@@ -555,10 +552,8 @@ def readlines(sock):
 			buf = rest
 
 for line in readlines(sock):
-	msg = try_unicode(line, [ENCODING, FALLBACK_ENCODING])
-
 	for exp,fn in compiled_res:
-		r = exp.search(msg)
+		r = exp.search(line)
 		if r:
 			try:
 				res = fn(r)
