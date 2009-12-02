@@ -335,19 +335,32 @@ for e,f in regexes:
 	cr = re.compile(e, re.UNICODE)
 	compiled_res.append( (cr, f) )
 
-while True:
-	buffer = sock.recv(2040)
-	if not buffer:
-		break
-	print repr(buffer)
 
-	if buffer.find('PING') != -1: 
-		sock.send('PONG ' + buffer.split() [1] + '\r\n')
+newline = re.compile('\r*\n')
+def readlines(sock):
+	buf = ''
+	while True:
+		data = sock.recv(2040)
+		if not data:
+			print "no returned data. EOF?"
+			break
+		print 'raw data: ',repr(data)
+		buf += data
+		while newline.search(buf):
+			line,rest = newline.split(buf, 1)
+			print "line: %r" % (line)
+			print "rest: %r" % (rest)
+			yield line
+			buf = rest
 
-	if re.search(':[!@]help', buffer, re.UNICODE) is not None or re.search(':'+nick+'[ ,:]+help', buffer, re.UNICODE) is not None:
+for line in readlines(sock):
+	if line.find('PING') != -1:
+		sock.send('PONG ' + line.split() [1] + '\r\n')
+
+	if re.search(':[!@]help', line, re.UNICODE) is not None or re.search(':'+nick+'[ ,:]+help', line, re.UNICODE) is not None:
 		sendmsg('@karmas, @urls, @slackers\r\n')
 
-	msg = try_unicode(buffer, [ENCODING, FALLBACK_ENCODING])
+	msg = try_unicode(line, [ENCODING, FALLBACK_ENCODING])
 
 	for exp,fn in compiled_res:
 		r = exp.search(msg)
