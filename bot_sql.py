@@ -344,7 +344,7 @@ def do_url(m, r, reply):
 			parser = html(url)
 			t = parser.title()
 		except urllib2.URLError,e:
-			t = u"ui. erro. o servidor não gosta de mim (%s)" % (str(e))
+			t = u"erro no trem de bits! (%s)" % (str(e))
 			traceback.print_exc()
 		except Exception,e:
 			t = u"acho que algo explodiu aqui. :( -- %s" % (str(e))
