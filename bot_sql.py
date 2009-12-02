@@ -230,25 +230,6 @@ sendcmd('NICKSERV', ['IDENTIFY', password])
 sendcmd('JOIN', [channel])
 
 
-def do_show_karma(resultk):
-	var = resultk.group(1)
-	points = banco.get_karma(var)
-	if points is not None:
-		sendmsg(var + ' have ' + unicode(points) + ' points of karma')
-	else:
-		sendmsg(var + ' doesn\'t have any point of karma')
-
-def do_dump_karmas(r):
-	sendmsg('high karmas: ' + banco.get_karmas_count(True))
-	sendmsg('low karmas: ' + banco.get_karmas_count(False))
-
-def do_slackers(r):
-	sendmsg('slackers in chars : ' + banco.get_slacker_count())
-
-def do_urls(r):
-	sendmsg('users : ' + banco.get_urls_count())
-
-
 sender_re = re.compile('([^!@]+)((![^!@]+)?)((@[^!@]+)?)')
 
 class Message:
@@ -381,6 +362,25 @@ def do_url(m, r, reply):
 		print "*** Unexpected error:", sys.exc_info()[0]
 		traceback.print_exc()
 
+def do_show_karma(m, r, reply):
+	var = r.group(1)
+	points = banco.get_karma(var)
+	if points is not None:
+		reply(var + ' have ' + unicode(points) + ' points of karma')
+	else:
+		reply(var + ' doesn\'t have any point of karma')
+
+def do_dump_karmas(m, r, reply):
+	reply('high karmas: ' + banco.get_karmas_count(True))
+	reply('low karmas: ' + banco.get_karmas_count(False))
+
+def do_slackers(m, r, reply):
+	reply('slackers in chars : ' + banco.get_slacker_count())
+
+def do_urls(m, r, reply):
+	reply('users : ' + banco.get_urls_count())
+
+
 # list of (regex, function) pairs
 # the functions should accept three args: the incoming message, and the regexp match object, and a "reply function"
 # to send replies.
@@ -389,16 +389,19 @@ _channel_res = [
 	('(.*)', lambda m,r,reply: sys.stdout.write("got channel message: %r, %r\n" % (m, r.groups())) or True ),
 	('(.*)', do_slack),
 
+	('^@*karma (\w+)$', do_show_karma),
+	('@karmas', do_dump_karmas),
+	('@slackers', do_slackers),
+	('@urls', do_urls),
+
 	('(https?://[^ \t>\n\r\x01-\x1f]+)', do_url),
 
 	('\\b(\w(\w|[._-])+)\+\+', do_karma),
 	('\\b(\w(\w|[._-])+)\-\-', do_dec_karma),
 	('\\b(\w(\w|[._-])+) *(\+|-)= *([0-9]+)', do_karma_sum),
 	('''(?i)\\b(g|google|)\.*wave--''', lambda m,r,reply: reply(u'o Google Wave é uma merda mesmo, todo mundo já sabe') or True),
-	('^carcereiro[:,] *(.*)', personal_msg_on_channel),
 
 	(u'o carcereiro roubou p[ãa]o na casa do jo[ãa]o', lambda m,r,reply: send_nick_reply(reply, m.sender_nick, u'quem, eu?')),
-	('carcereiro|carcy', lambda m,r,reply: reply(u"eu?")),
 
 	('lala', lambda m,r,reply: sys.stdout.write("lala\n") or True),
 	('lalala', lambda m,r,reply: sys.stdout.write("lalala\n")),
@@ -412,8 +415,10 @@ _channel_res = [
 	('(?i)\\bjip(e|inho) +tomb(a|ou)', lambda m,r,reply: reply(u'nao fala em jipe tombar!')),
 	('(?i)\\b(bot|carcereiro) burro', lambda m,r,reply: reply(":'(")),
 
-
 	('\\b/wb/', lambda m,r,reply: reply(u'eu não tenho acesso ao /wb/, seu insensível!')),
+
+	('^carcereiro[:,] *(.*)', personal_msg_on_channel),
+	('carcereiro|carcy', lambda m,r,reply: reply(u"eu?")),
 ]
 
 channel_res = [(re.compile(r, re.UNICODE), fn) for (r, fn) in _channel_res]
@@ -436,6 +441,12 @@ def handle_channel_msg(m, reply_func):
 # like channel_res, but for (private or nick-prefixed) "personal messages"
 _personal_res = [
 	('^funciona\?$', lambda m,r,reply: reply("sim!")),
+
+	('^@*karma (\w+)$', do_show_karma),
+	('^@*karmas', do_dump_karmas),
+	('^@*slackers', do_slackers),
+	('^@*urls', do_urls),
+
 	('burro', lambda m,r,reply: reply(":(")),
 	('^ping\?*$', lambda m,r,reply: reply("pong!")),
 	(u'^sim[, ]+voc[êe]', lambda m,r,reply: reply(u"eu não!")),
@@ -501,10 +512,6 @@ def cmd_received(r):
 # regexes for IRC commands:
 regexes = [
 	('^((:[^ ]* +)?)([a-zA-Z]+) +(([^:][^ ]* +)*)((:.*)?)\r*\n*$', cmd_received),
-	('PRIVMSG.*:karma (\w+)', do_show_karma),
-	('PRIVMSG.*[: ]\@karmas', do_dump_karmas),
-	('PRIVMSG.*[: ]\@slackers', do_slackers),
-	('PRIVMSG.*[: ]\@urls', do_urls),
 ]
 
 compiled_res = []
