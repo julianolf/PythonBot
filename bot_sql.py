@@ -338,6 +338,23 @@ class Message:
 		return '<message: cmd %r from [%r]![%r]@[%r]. args: %r' % (self.cmd, self.sender_nick, self.sender_user, self.sender_host, self.args)
 
 
+def send_nick_reply(channel, nick, msg):
+	"""send a "nick:" prefixed message"""
+	_sendmsg(channel, u'%s: %s' % (nick, msg))
+
+def nick_reply_func(channel, nick):
+	"""Create a nick-reply reply function"""
+	return lambda msg: send_nick_reply(channel, nick, msg)
+
+def send_private_msg(nick, msg):
+	"""Send a private message to a nickname"""
+	_sendmsg(nick, msg)
+
+def private_reply_func(nick):
+	"""Generate a private-message reply func"""
+	return lambda msg: send_private_msg(nick, msg)
+
+
 # list of (regex, function) pairs
 # the functions should accept two args: the incoming message, and the regexp match object
 # if the function return a false value (0, None, False, etc), it will stop the regexp processing
@@ -359,12 +376,30 @@ def handle_channel_msg(m):
 			if not r:
 				break
 
+# list of "personal message" res
+# like channel_res, but functions get a third "reply function" parameter, to send
+# replies.
+_personal_res = [
+	('(.*)', lambda m,r,reply: reply("que foi?")),
+]
+personal_res = [(re.compile(r, re.UNICODE), fn) for (r, fn) in _personal_res]
+
+def handle_personal_msg(m, reply_func):
+	for r,fn in personal_res:
+		match = r.search(m.msg)
+		if match:
+			r = fn(m, match, reply_func)
+			if not r:
+				break
+	
 def handle_privmsg(m):
 	print "***** privmsg received: %r" % (m)
 	# set additional useful message attributes
 	m.target,m.msg = m.args
 	if m.target == channel:
 		handle_channel_msg(m)
+	elif m.target == nick and m.sender_nick:
+		handle_personal_msg(m, private_reply_func(m.sender_nick))
 
 
 def handle_ping(m):
