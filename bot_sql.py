@@ -318,28 +318,28 @@ def do_url(url_search):
 sender_re = re.compile('([^!@]+)((![^!@]+)?)((@[^!@]+)?)')
 
 class Message:
-	def __init__(self, sender, cmd, middleargs, trail):
+	def __init__(self, sender, cmd, args):
 		self.sender = sender
 		self.cmd = cmd
-		self.middleargs = middleargs
-		self.trail = trail
+		self.args = args
 
-		m = sender_re.match(self.sender)
-		if not m:
-			print "***** sender regexp doesn't match?"
-			self.sender_nick = self.sender
-			self.sender_user = self.sender_host = ''
-		else:
-			self.sender_nick = m.group(1)
-			self.sender_user = m.group(2).lstrip('!')
-			self.sender_host = m.group(4).lstrip('@')
+		self.sender_nick = self.sender_user = self.sender_host = None
+		if self.sender is not None:
+			m = sender_re.match(self.sender)
+			if not m:
+				print "***** sender regexp doesn't match?"
+				self.sender_nick = self.sender
+			else:
+				self.sender_nick = m.group(1)
+				self.sender_user = m.group(2).lstrip('!')
+				self.sender_host = m.group(4).lstrip('@')
 
 	def __repr__(self):
-		return '<message: cmd %r from [%r]![%r]@[%r]. middle: %r. trail: %r>' % (self.cmd, self.sender_nick, self.sender_user, self.sender_host, self.middleargs, self.trail)
+		return '<message: cmd %r from [%r]![%r]@[%r]. args: %r' % (self.cmd, self.sender_nick, self.sender_user, self.sender_host, self.args)
 
 
 def handle_privmsg(m):
-	target, = m.middleargs
+	target,msg = m.args
 	print "***** privmsg received: %r" % (m)
 
 def handle_ping(m):
@@ -353,15 +353,19 @@ cmd_handlers = {
 
 def cmd_received(r):
 	groups = r.groups()
-	sender,cmd,middle,_,trailing,_ = groups
-	middleargs = middle.split()
+	prefix,_,cmd,middle,_,trailing,_ = groups
+	args = middle.split()
 
-	if trailing == '':
-		trail = None
+	if trailing != '':
+		a = trailing[1:]
+		args.append(a)
+
+	if prefix != '':
+		sender = prefix[1:]
 	else:
-		# strip ':' prefix
-		trail = trailing[1:]
-	m = Message(sender, cmd, middleargs, trail)
+		sender = None
+
+	m = Message(sender, cmd, args)
 	print '*** cmd received: ', repr(m)
 
 	h = cmd_handlers.get(m.cmd.lower())
@@ -374,7 +378,7 @@ def cmd_received(r):
 
 # regexes for IRC commands:
 regexes = [
-	('^:([^ ]*) +([a-zA-Z]+) +(([^:][^ ]* +)*)((:.*)?)\r*\n*$', cmd_received),
+	('^((:[^ ]* +)?)([a-zA-Z]+) +(([^:][^ ]* +)*)((:.*)?)\r*\n*$', cmd_received),
 	(':([a-zA-Z0-9\_]+)!.* PRIVMSG.* :(.*)$', do_slack),
 	('''(?i)PRIVMSG.*[: ](g|google|)\.*wave--''', lambda r: sendmsg(u'o Google Wave é uma merda mesmo, todo mundo já sabe') or True),
 	('PRIVMSG.*[: ](\w(\w|[._-])+)\+\+', do_karma),
