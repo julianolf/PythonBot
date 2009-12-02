@@ -336,7 +336,7 @@ def personal_msg_on_channel(m, r, reply):
 	but reply using a nick prefix on the channel
 	"""
 	m.text = r.group(1)
-	handle_personal_msg(m, nick_reply_func(reply, m.sender_nick))
+	return handle_personal_msg(m, nick_reply_func(reply, m.sender_nick))
 
 
 ### channel-message handlers:
@@ -377,15 +377,27 @@ def do_karma_sum(m, r, reply):
 # to send replies.
 # if the handler function return a false value (0, None, False, etc), it will stop the regexp processing
 _channel_res = [
+	('(.*)', lambda m,r,reply: sys.stdout.write("got channel message: %r, %r\n" % (m, r.groups())) or True ),
+
 	('\\b(\w(\w|[._-])+)\+\+', do_karma),
 	('\\b(\w(\w|[._-])+)\-\-', do_dec_karma),
 	('\\b(\w(\w|[._-])+) *(\+|-)= *([0-9]+)', do_karma_sum),
 	('''(?i)\\b(g|google|)\.*wave--''', lambda m,r,reply: reply(u'o Google Wave é uma merda mesmo, todo mundo já sabe') or True),
 	('^carcereiro[:,] *(.*)', personal_msg_on_channel),
 	('carcereiro|carcy', lambda m,r,reply: reply(u"eu?")),
-	('(.*)', lambda m,r,reply: sys.stdout.write("got channel message: %r, %r\n" % (m, r.groups())) or True ),
+
 	('lala', lambda m,r,reply: sys.stdout.write("lala\n") or True),
 	('lalala', lambda m,r,reply: sys.stdout.write("lalala\n")),
+
+	('(?i)\\bronaldo!', lambda m,r,reply: reply(u'brilha muito nu curintia!')),
+	('(?i)\\bcurintia!', lambda m,r,reply: reply(u'brilha muito no ronaldo!')),
+	('(?i)\\bcoraldo!', lambda m,r,reply: reply(u'brilha muito no ronintia!')),
+	('^ *tu[ -]*dum[\.!]*$''', lambda m,r,reply: reply(u'PÁ!')),
+	(u'(?i)^o* *meu +pai +(é|e)h* +detetive[\.!]*$', lambda m,r,reply: reply(u'mas o teu é despachante')),
+	(u'(?i)ningu[ée]m f(a|e)z nada!', lambda m,r,reply: reply(u'ninguém f%sz nada! NA-DA!' % (r.group(1)))),
+	('(?i)\\bjip(e|inho) +tomb(a|ou)', lambda m,r,reply: reply(u'nao fala em jipe tombar!')),
+	('(?i)\\b(bot|carcereiro) burro', lambda m,r,reply: reply(":'(")),
+	('\\b/wb/', lambda m,r,reply: reply(u'eu não tenho acesso ao /wb/, seu insensível!')),
 ]
 
 channel_res = [(re.compile(r, re.UNICODE), fn) for (r, fn) in _channel_res]
@@ -398,7 +410,8 @@ def handle_channel_msg(m, reply_func):
 		if match:
 			r = fn(m, match, reply_func)
 			if not r:
-				break
+				return r
+	return True
 
 # list of "personal message" res
 # like channel_res, but for (private or nick-prefixed) "personal messages"
@@ -415,7 +428,8 @@ def handle_personal_msg(m, reply_func):
 		if match:
 			r = fn(m, match, reply_func)
 			if not r:
-				break
+				return r
+	return True
 	
 def handle_privmsg(m):
 	print "***** privmsg received: %r" % (m)
@@ -476,15 +490,6 @@ regexes = [
 	('PRIVMSG.*[: ]\@karmas', do_dump_karmas),
 	('PRIVMSG.*[: ]\@slackers', do_slackers),
 	('PRIVMSG.*[: ]\@urls', do_urls),
-	('(?i)PRIVMSG.*[: ]ronaldo!', lambda r: sendmsg(u'brilha muito nu curintia!')),
-	('(?i)PRIVMSG.*[: ]curintia!', lambda r: sendmsg(u'brilha muito no ronaldo!')),
-	('(?i)PRIVMSG.*[: ]coraldo!', lambda r: sendmsg(u'brilha muito no ronintia!')),
-	('''(?i)PRIVMSG [#a-z_-]+ :tu[ -]*dum[\.!]*\r*\n*$''', lambda r: sendmsg(u'PÁ!')),
-	(u'''(?i)PRIVMSG [#a-z_-]+ :o* *meu +pai +(é|e)h* +detetive[\.!]*\r*\n*$''', lambda r: sendmsg(u'mas o teu é despachante')),
-	(u'''(?i)PRIVMSG.*ningu[ée]m f(a|e)z nada!''', lambda r: sendmsg(u'ninguém f%sz nada! NA-DA!' % (r.group(1)))),
-	('(?i)PRIVMSG.*[: ]jip(e|inho) +tomb(a|ou)', lambda r: sendmsg(u'nao fala em jipe tombar!')),
-	('(?i)PRIVMSG.*[: ](bot|carcereiro) burro', lambda r: sendmsg(":'(")),
-	('PRIVMSG.*[: ]/wb/', lambda r: sendmsg(u'eu não tenho acesso ao /wb/, seu insensível!')),
 	(':([a-zA-Z0-9\_]+)!.* PRIVMSG .*?(https?://[^ \t>\n\r\x01-\x1f]+)', do_url),
 ]
 
