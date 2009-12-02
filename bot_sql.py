@@ -306,7 +306,16 @@ def do_url(url_search):
 		print "Unexpected error:", sys.exc_info()[0]
 		traceback.print_exc()
 
+def cmd_received(r):
+	groups = r.groups()
+	sender,cmd,target,_,trailing = groups
+	
+	print 'cmd received: ',repr(groups)
+
+
+# regexes for IRC commands:
 regexes = [
+	('^:([^ ]*) +([a-zA-Z]+) +(([^:][^ ]* +)*):(.*)\r*\n*$', cmd_received),
 	(':([a-zA-Z0-9\_]+)!.* PRIVMSG.* :(.*)$', do_slack),
 	('''(?i)PRIVMSG.*[: ](g|google|)\.*wave--''', lambda r: sendmsg(u'o Google Wave é uma merda mesmo, todo mundo já sabe') or True),
 	('PRIVMSG.*[: ](\w(\w|[._-])+)\+\+', do_karma),
