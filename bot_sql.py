@@ -383,11 +383,37 @@ def do_urls(m, r, reply):
 def do_help(m, r, reply):
 	reply('commands: @karma <name>, @karmas, @urls, @slackers')
 
+
+## regexp-list handling:
+def handle_res(re_list, m, reply_func):
+	try:
+		for r,fn in re_list:
+			match = r.search(m.text)
+			if match:
+				r = fn(m, match, reply_func)
+				if not r:
+					return r
+		return True
+	except Exception,e:
+		reply(u"acho que algo explodiu aqui. :( -- %s" % (str(e)))
+		traceback.print_exc()
+		
+
+def include(l):
+	"""Used to insert a list inside another one
+
+	Just generates a regexp that calls handle_res for the specified list.
+	"""
+	return ('', lambda m,r,reply: handle_res(l, m, reply))
+
+def relist(l):
+	return [(re.compile(r, re.UNICODE), fn) for (r, fn) in l]
+	
 # list of (regex, function) pairs
 # the functions should accept three args: the incoming message, and the regexp match object, and a "reply function"
 # to send replies.
 # if the handler function return a false value (0, None, False, etc), it will stop the regexp processing
-_channel_res = [
+channel_res = relist([
 	('(.*)', lambda m,r,reply: sys.stdout.write("got channel message: %r, %r\n" % (m, r.groups())) or True ),
 	('(.*)', do_slack),
 
@@ -418,37 +444,20 @@ _channel_res = [
 	(u'(?i)ningu[ée]m f(a|e)z nada!', lambda m,r,reply: reply(u'ninguém f%sz nada! NA-DA!' % (r.group(1)))),
 	(r'(?i)\bjip(e|inho) +tomb(a|ou)', lambda m,r,reply: reply(u'nao fala em jipe tombar!')),
 	(r'(?i)\b(bot|carcereiro) burro', lambda m,r,reply: reply(":'(")),
-
 	(r'\b/wb/', lambda m,r,reply: reply(u'eu não tenho acesso ao /wb/, seu insensível!')),
 
 	('^carcereiro[:,] *(.*)', personal_msg_on_channel),
 	('carcereiro|carcy', lambda m,r,reply: reply(u"eu?")),
-]
-
-channel_res = [(re.compile(r, re.UNICODE), fn) for (r, fn) in _channel_res]
+])
 
 
-
-def handle_res(re_list, m, reply_func):
-	try:
-		for r,fn in re_list:
-			match = r.search(m.text)
-			if match:
-				r = fn(m, match, reply_func)
-				if not r:
-					return r
-		return True
-	except Exception,e:
-		reply(u"acho que algo explodiu aqui. :( -- %s" % (str(e)))
-		traceback.print_exc()
-		
 
 def handle_channel_msg(m, reply_func):
 	return handle_res(channel_res, m, reply_func)
 
 # list of "personal message" res
 # like channel_res, but for (private or nick-prefixed) "personal messages"
-_personal_res = [
+personal_res = relist([
 	('^funciona\?$', lambda m,r,reply: reply("sim!")),
 
 	('^@*karma (\w+)$', do_show_karma),
@@ -462,8 +471,7 @@ _personal_res = [
 	('^ping\?*$', lambda m,r,reply: reply("pong!")),
 	(u'^sim[, ]+voc[êe]', lambda m,r,reply: reply(u"eu não!")),
 	('(.*)', lambda m,r,reply: reply(u"não entendi")),
-]
-personal_res = [(re.compile(r, re.UNICODE), fn) for (r, fn) in _personal_res]
+])
 
 def handle_personal_msg(m, reply_func):
 	print "***** personal msg received. %r" % (m)
@@ -524,15 +532,9 @@ def cmd_received(r):
 
 
 # regexes for IRC commands:
-regexes = [
+protocol_res = relist([
 	('^((:[^ ]* +)?)([a-zA-Z]+) +(([^:][^ ]* +)*)((:.*)?)\r*\n*$', cmd_received),
-]
-
-compiled_res = []
-# compile all regexes:
-for e,f in regexes:
-	cr = re.compile(e, re.UNICODE)
-	compiled_res.append( (cr, f) )
+])
 
 
 newline = re.compile('\r*\n')
@@ -553,7 +555,7 @@ def readlines(sock):
 			buf = rest
 
 for line in readlines(sock):
-	for exp,fn in compiled_res:
+	for exp,fn in protocol_res:
 		r = exp.search(line)
 		if r:
 			try:
