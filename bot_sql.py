@@ -463,6 +463,11 @@ personal_res = relist([
 	('^@*urls', do_urls),
 	('^@*!*help', do_help),
 
+	(r'^oi[?!.]*$', lambda m,r,reply: reply(u'oi. tudo bem?')),
+	(r'^hey[?!.]*$', lambda m,r,reply: reply(u'ho!')),
+	(u'^(tudo|td) bem[.,]* e* *(vc|voc[eê])[?!.]*$', lambda m,r,reply: reply(u'tudo bem também')),
+	(r'\b(tudo|td) bem\?$', lambda m,r,reply: reply(u'tudo bem. e você?')),
+	(r'\btudo bem[.!]*$', lambda m,r,reply: reply(u'que bom, então')),
 
 	('burro', lambda m,r,reply: reply(":(")),
 	('^ping\?*$', lambda m,r,reply: reply("pong!")),
