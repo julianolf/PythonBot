@@ -15,7 +15,7 @@ DATA_CHUNK = 1024
 ENCODING = 'utf-8'
 FALLBACK_ENCODING = 'iso-8859-1'
 
-channel = '#masmorra'
+CHANNEL = '#masmorra'
 nick = 'carcereiro'
 server = 'irc.oftc.net' 
 
@@ -31,9 +31,6 @@ def sendcmd(cmd, middle, trail=None):
 
 def _sendmsg(who, msg): 
 	sendcmd('PRIVMSG', [who], unicode(msg).encode(ENCODING))
-
-def sendmsg(msg):
-    return _sendmsg(channel, msg)
 
 class db():
 	def __init__(self, dbfile):
@@ -227,7 +224,7 @@ sendcmd('NICK', [nick])
 sendcmd('NICKSERV', ['IDENTIFY', password])
 
 # join the channel
-sendcmd('JOIN', [channel])
+sendcmd('JOIN', [CHANNEL])
 
 
 sender_re = re.compile('([^!@]+)((![^!@]+)?)((@[^!@]+)?)')
@@ -487,8 +484,8 @@ def handle_privmsg(m):
 	# set additional useful message attributes
 	m.text = try_unicode(text, [ENCODING, FALLBACK_ENCODING])
 
-	if m.target == channel:
-		handle_channel_msg(m, channel_reply_func(channel))
+	if m.target == CHANNEL:
+		handle_channel_msg(m, channel_reply_func(CHANNEL))
 	elif m.target == nick and m.sender_nick:
 		handle_personal_msg(m, private_reply_func(m.sender_nick))
 
