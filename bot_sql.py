@@ -16,8 +16,8 @@ ENCODING = 'utf-8'
 FALLBACK_ENCODING = 'iso-8859-1'
 
 CHANNEL = '#masmorra'
-nick = 'carcereiro'
-server = 'irc.oftc.net' 
+NICK = 'carcereiro'
+SERVER = 'irc.oftc.net' 
 
 def sendcmd(cmd, middle, trail=None):
 	m = '%s ' % (cmd)
@@ -209,18 +209,18 @@ password = sys.argv[1]
 
 banco = db('carcereiro.db')
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.connect((server, 6667))
+sock.connect((SERVER, 6667))
 sock.settimeout(900)
 
 # initially use nick_ (I hope nobody will connect using it :)
-sendcmd('NICK', ['%s_' % (nick)])
-sendcmd('USER', [nick, "''", "''"], 'python')
+sendcmd('NICK', ['%s_' % (NICK)])
+sendcmd('USER', [NICK, "''", "''"], 'python')
 
 # regain nick, if it is in use
-sendcmd('NICKSERV', ['REGAIN', nick, password])
+sendcmd('NICKSERV', ['REGAIN', NICK, password])
 
 # change to the real nick
-sendcmd('NICK', [nick])
+sendcmd('NICK', [NICK])
 sendcmd('NICKSERV', ['IDENTIFY', password])
 
 # join the channel
@@ -301,7 +301,7 @@ def do_karma(m, r, reply):
 		send_nick_reply(reply, m.sender_nick, "convencido!")
 		return
 	banco.increment_karma(var)
-	if var == nick:
+	if var == NICK:
 		reply('eu sou foda! ' + unicode(banco.get_karma(var)) + ' pontos de karma')
 	else:
 		reply(var + ' now has ' + unicode(banco.get_karma(var)) + ' points of karma')
@@ -309,7 +309,7 @@ def do_karma(m, r, reply):
 def do_dec_karma(m, r, reply):
 	var = r.group(1)
 	banco.decrement_karma(var)
-	if var == nick:
+	if var == NICK:
 		reply('tenho ' + unicode(banco.get_karma(var)) + ' pontos de karma agora  :(')
 	else:
 		reply(var + ' now has ' + unicode(banco.get_karma(var)) + ' points of karma')
@@ -486,7 +486,7 @@ def handle_privmsg(m):
 
 	if m.target == CHANNEL:
 		handle_channel_msg(m, channel_reply_func(CHANNEL))
-	elif m.target == nick and m.sender_nick:
+	elif m.target == NICK and m.sender_nick:
 		handle_personal_msg(m, private_reply_func(m.sender_nick))
 
 
