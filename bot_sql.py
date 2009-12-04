@@ -30,6 +30,8 @@ def sendcmd(cmd, middle, trail=None):
 	sock.send(m)
 
 def _sendmsg(who, msg): 
+	if isinstance(msg, str):
+		msg = unicode(msg, ENCODING)
 	sendcmd('PRIVMSG', [who], unicode(msg).encode(ENCODING))
 
 class db():
