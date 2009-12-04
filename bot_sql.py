@@ -394,7 +394,7 @@ def handle_res(re_list, m, reply_func):
 					return r
 		return True
 	except Exception,e:
-		reply(u"acho que algo explodiu aqui. :( -- %s" % (str(e)))
+		reply_func(u"acho que algo explodiu aqui. :( -- %s" % (str(e)))
 		traceback.print_exc()
 		
 
@@ -444,6 +444,8 @@ channel_res = relist([
 	(r'(?i)\bjip(e|inho) +tomb(a|ou)', lambda m,r,reply: reply(u'nao fala em jipe tombar!')),
 	(r'(?i)\b(bot|carcereiro) burro', lambda m,r,reply: reply(":'(")),
 	(r'\b/wb/', lambda m,r,reply: reply(u'eu não tenho acesso ao /wb/, seu insensível!')),
+	(u'(?i)\\bo m[aá]rio\\b', lambda m,r,reply: send_nick_reply(reply, m.sender_nick, u'que mario?')),
+	(u'(?i)^(oi|ol[áa])\b', lambda m,r,reply: send_nick_reply(reply, m.sender_nick, u'oi, tudo bem?')),
 
 	('^carcereiro[:,] *(.*)', personal_msg_on_channel),
 	('carcereiro|carcy', lambda m,r,reply: reply(u"eu?")),
@@ -458,6 +460,7 @@ def handle_channel_msg(m, reply_func):
 # like channel_res, but for (private or nick-prefixed) "personal messages"
 personal_res = relist([
 	('^funciona\?$', lambda m,r,reply: reply("sim!")),
+	(r'^acorda\b', lambda m,r,reply: reply(u"eu tô acordado!")),
 
 	('^@*karma (\w+)$', do_show_karma),
 	('^@*karmas', do_dump_karmas),
