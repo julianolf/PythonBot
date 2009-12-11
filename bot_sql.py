@@ -311,6 +311,8 @@ def do_karma(m, r, reply):
 
 def do_dec_karma(m, r, reply):
 	var = r.group(1)
+	if m.sender_nick == var:
+		send_nick_reply(reply, m.sender_nick, u"tadinho... vem cá e me dá um abraço!")
 	banco.decrement_karma(var)
 	if var == NICK:
 		reply('tenho ' + unicode(banco.get_karma(var)) + ' pontos de karma agora  :(')
@@ -331,6 +333,8 @@ def do_karma_sum(m, r, reply):
 	if m.sender_nick == var and amount > 0:
 		send_nick_reply(reply, m.sender_nick, "convencido!")
 		return
+	if m.sender_nick == var and amount < 0:
+		send_nick_reply(reply, m.sender_nick, u"tadinho... vem cá e me dá um abraço!")
 	banco.change_karma(var, amount)
 	reply(var + ' now has ' + unicode(banco.get_karma(var)) + ' points of karma')
 
