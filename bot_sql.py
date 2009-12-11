@@ -15,7 +15,6 @@ DATA_CHUNK = 1024
 ENCODING = 'utf-8'
 FALLBACK_ENCODING = 'iso-8859-1'
 
-CHANNEL = '#masmorra'
 NICK = 'carcereiro'
 SERVER = 'irc.oftc.net' 
 
@@ -208,6 +207,7 @@ class html:
 
 
 password = sys.argv[1]
+CHANNELS = sys.argv[2:]
 
 banco = db('carcereiro.db')
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -226,7 +226,8 @@ sendcmd('NICK', [NICK])
 sendcmd('NICKSERV', ['IDENTIFY', password])
 
 # join the channel
-sendcmd('JOIN', [CHANNEL])
+for c in CHANNELS:
+	sendcmd('JOIN', [c])
 
 
 sender_re = re.compile('([^!@]+)((![^!@]+)?)((@[^!@]+)?)')
@@ -443,8 +444,8 @@ channel_res = relist([
 	(u'(?i)ningu[ée]m f(a|e)z nada!', lambda m,r,reply: reply(u'ninguém f%sz nada! NA-DA!' % (r.group(1)))),
 	(r'(?i)\bjip(e|inho) +tomb(a|ou)', lambda m,r,reply: reply(u'nao fala em jipe tombar!')),
 	(r'(?i)\b(bot|carcereiro) burro', lambda m,r,reply: reply(":'(")),
-	(r'\b/wb/', lambda m,r,reply: reply(u'eu não tenho acesso ao /wb/, seu insensível!')),
-	(u'(?i)\\bo m[aá]rio\\b', lambda m,r,reply: send_nick_reply(reply, m.sender_nick, u'que mario?')),
+	(r'/wb/', lambda m,r,reply: send_nick_reply(reply, m.sender_nick, u'eu não tenho acesso ao /wb/, seu insensível!')),
+	(u'(?i)\\bo +m[aá]rio\\b', lambda m,r,reply: send_nick_reply(reply, m.sender_nick, u'que mario?')),
 	(u'(?i)^(oi|ol[áa])\b', lambda m,r,reply: send_nick_reply(reply, m.sender_nick, u'oi, tudo bem?')),
 
 	('^carcereiro[:,] *(.*)', personal_msg_on_channel),
@@ -494,8 +495,8 @@ def handle_privmsg(m):
 	# set additional useful message attributes
 	m.text = try_unicode(text, [ENCODING, FALLBACK_ENCODING])
 
-	if m.target == CHANNEL:
-		handle_channel_msg(m, channel_reply_func(CHANNEL))
+	if m.target in CHANNELS:
+		handle_channel_msg(m, channel_reply_func(m.target))
 	elif m.target == NICK and m.sender_nick:
 		handle_personal_msg(m, private_reply_func(m.sender_nick))
 
