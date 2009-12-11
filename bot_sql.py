@@ -440,6 +440,7 @@ channel_res = relist([
 	('lala', lambda m,r,reply: sys.stdout.write("lala\n") or True),
 	('lalala', lambda m,r,reply: sys.stdout.write("lalala\n")),
 
+	(r'(?i)\bcoxa!', lambda m,r,reply: reply(u'brilha muito na segundona!')),
 	(r'(?i)\bronaldo!', lambda m,r,reply: reply(u'brilha muito nu curintia!')),
 	(r'(?i)\bcurintia!', lambda m,r,reply: reply(u'brilha muito no ronaldo!')),
 	(r'(?i)\bcoraldo!', lambda m,r,reply: reply(u'brilha muito no ronintia!')),
