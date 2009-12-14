@@ -483,6 +483,9 @@ personal_res = relist([
 	('burro', lambda m,r,reply: reply(":(")),
 	('^ping\?*$', lambda m,r,reply: reply("pong!")),
 	(u'^sim[, ]+voc[êe]', lambda m,r,reply: reply(u"eu não!")),
+
+	(r':(\*+)', lambda m,r,reply: reply(u':%s' % (r.group(1)))),
+	(r'\bte (amo|adoro|odeio)', lambda m,r,reply: reply(u'eu também te %s!' % (r.group(1)))),
 	('(.*)', lambda m,r,reply: reply(u"não entendi")),
 ])
 
