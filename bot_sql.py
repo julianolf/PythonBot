@@ -451,7 +451,8 @@ channel_res = relist([
 	(r'(?i)\b(bot|carcereiro) burro', lambda m,r,reply: reply(":'(")),
 	(r'/wb/', lambda m,r,reply: send_nick_reply(reply, m.sender_nick, u'eu não tenho acesso ao /wb/, seu insensível!')),
 	(u'(?i)\\bo +m[aá]rio\\b', lambda m,r,reply: send_nick_reply(reply, m.sender_nick, u'que mario?')),
-	(u'(?i)^(oi|ol[áa])\b', lambda m,r,reply: send_nick_reply(reply, m.sender_nick, u'oi, tudo bem?')),
+	(u'(?i)^(oi|ol[áa])\\b', lambda m,r,reply: send_nick_reply(reply, m.sender_nick, u'oi, tudo bem?')),
+	(r'(?i)\b(nazi|hitler\b)', lambda m,r,reply: send_nick_reply(reply, m.sender_nick, u'Godwin! a discussão acabou, você perdeu.')),
 
 	('^carcereiro[:,] *(.*)', personal_msg_on_channel),
 	('carcereiro|carcy', lambda m,r,reply: reply(u"eu?")),
