@@ -442,6 +442,8 @@ channel_res = relist([
 
 	(r'(?i)\bcoxa!', lambda m,r,reply: reply(u'brilha muito na segundona!')),
 	(r'(?i)\bronaldo!', lambda m,r,reply: reply(u'brilha muito nu curintia!')),
+	(r'(?i)\bjuliano!', lambda m,r,reply: reply(u'brilha muito na escalada!')),
+	(r'(?i)\bquinino!', lambda m,r,reply: reply(u'brilha muito na balada!')),
 	(r'(?i)\bcurintia!', lambda m,r,reply: reply(u'brilha muito no ronaldo!')),
 	(r'(?i)\bcoraldo!', lambda m,r,reply: reply(u'brilha muito no ronintia!')),
 	('^ *tu[ -]*dum[\.!]*$''', lambda m,r,reply: reply(u'PÁ!')),
