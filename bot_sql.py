@@ -516,10 +516,28 @@ def handle_ping(m):
 	print "***** got PING: %r" % (m)
 	sendcmd('PONG', [], m.args[0])
 
+def channel_mode_add_o(m):
+	m.op_who = m.args[2]
+	if m.op_who == NICK:
+		send_channel_msg(m.mode_target, u"eu tenho a força!")
+	else:
+		send_channel_msg(m.mode_target, u"%s: me dá op, tio!" % (m.op_who))
+
+def channel_mode(m):
+	m.flag = m.args[1]
+	if m.flag == '+o':
+		return channel_mode_add_o(m)
+	
+def handle_mode(m):
+	m.mode_target = m.args[0]
+	if m.mode_target.startswith('#'):
+		return channel_mode(m)
+
 # handler for each command type. keys are in lower case
 cmd_handlers = {
 	'privmsg':handle_privmsg,
 	'ping':handle_ping,
+	'mode':handle_mode,
 }
 
 
