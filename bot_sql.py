@@ -413,6 +413,12 @@ def include(l):
 def relist(l):
 	return [(re.compile(r, re.UNICODE), fn) for (r, fn) in l]
 	
+
+def reply_not(reply, msg):
+	reply(msg)
+	time.sleep(2)
+	reply('NOT!')
+
 # list of (regex, function) pairs
 # the functions should accept three args: the incoming message, and the regexp match object, and a "reply function"
 # to send replies.
@@ -442,6 +448,7 @@ channel_res = relist([
 
 	(r'(?i)\bcoxa!', lambda m,r,reply: reply(u'brilha muito na segundona!')),
 	(r'(?i)\bronaldo!', lambda m,r,reply: reply(u'brilha muito nu curintia!')),
+	(r'(?i)\breinaldo!', lambda m,r,reply: reply_not(reply, u'brilha muito co chapéu!')),
 	(r'(?i)\bjuliano!', lambda m,r,reply: reply(u'brilha muito na escalada!')),
 	(r'(?i)\bquinino!', lambda m,r,reply: reply(u'brilha muito na balada!')),
 	(r'(?i)\bcurintia!', lambda m,r,reply: reply(u'brilha muito no ronaldo!')),
