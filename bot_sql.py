@@ -525,19 +525,25 @@ def handle_ping(m):
 	sendcmd('PONG', [], m.args[0])
 
 def channel_mode_add_o(m):
+	print '* adding operator flag on channel'
 	m.op_who = m.args[2]
+	print '* adding operator flag to: %s' % (m.op_who)
 	if m.op_who == NICK:
 		send_channel_msg(m.mode_target, u"eu tenho a força!")
 	else:
 		send_channel_msg(m.mode_target, u"%s: me dá op, tio!" % (m.op_who))
 
 def channel_mode(m):
+	print '* channel mode command'
 	m.flag = m.args[1]
+	print '* channel mode flag: %s' % (m.flag)
 	if m.flag == '+o':
 		return channel_mode_add_o(m)
 	
 def handle_mode(m):
+	print '* mode command received'
 	m.mode_target = m.args[0]
+	print '* mode target: %s' % (m.mode_target)
 	if m.mode_target.startswith('#'):
 		return channel_mode(m)
 
@@ -578,7 +584,7 @@ def cmd_received(r):
 
 # regexes for IRC commands:
 protocol_res = relist([
-	('^((:[^ ]* +)?)([a-zA-Z]+) +(([^:][^ ]* +)*)((:.*)?)\r*\n*$', cmd_received),
+	('^((:[^ ]* +)?)([a-zA-Z]+)(( +[^:][^ ]*)*)(( +:.*)?)\r*\n*$', cmd_received),
 ])
 
 
