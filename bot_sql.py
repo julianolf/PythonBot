@@ -448,6 +448,7 @@ channel_res = relist([
 
 	(r'(?i)\bcoxa!', lambda m,r,reply: reply(u'brilha muito na segundona!')),
 	(r'(?i)\bronaldo!', lambda m,r,reply: reply(u'brilha muito nu curintia!')),
+	(r'(?i)\bromualdo!', lambda m,r,reply: reply(u'brilha muito na mandriva!')),
 	(r'(?i)\breinaldo!', lambda m,r,reply: reply_not(reply, u'brilha muito co chapéu!')),
 	(r'(?i)\bjuliano!', lambda m,r,reply: reply(u'brilha muito na escalada!')),
 	(r'(?i)\bquinino!', lambda m,r,reply: reply(u'brilha muito na balada!')),
