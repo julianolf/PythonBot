@@ -391,9 +391,12 @@ def do_help(m, r, reply):
 ## regexp-list handling:
 def handle_res(re_list, m, reply_func):
 	try:
+		#print '**** text: %r' % (m.text)
 		for r,fn in re_list:
+			#print '**** checking for pattern: %r' % (r.pattern)
 			match = r.search(m.text)
 			if match:
+				#print '*** pattern match'
 				r = fn(m, match, reply_func)
 				if not r:
 					return r
@@ -454,7 +457,7 @@ channel_res = relist([
 	(r'(?i)\bquinino!', lambda m,r,reply: reply(u'brilha muito na balada!')),
 	(r'(?i)\bcurintia!', lambda m,r,reply: reply(u'brilha muito no ronaldo!')),
 	(r'(?i)\bcoraldo!', lambda m,r,reply: reply(u'brilha muito no ronintia!')),
-	('^ *tu[ -]*dum[\.!]*$''', lambda m,r,reply: reply(u'PÁ!')),
+	(r'^ *tu[ -]*dum[\.!]*$''', lambda m,r,reply: reply(u'PÁ!')),
 	(u'(?i)^o* *meu +pai +(é|e)h* +detetive[\.!]*$', lambda m,r,reply: reply(u'mas o teu é despachante')),
 	(u'(?i)ningu[ée]m f(a|e)z nada!', lambda m,r,reply: reply(u'ninguém f%sz nada! NA-DA!' % (r.group(1)))),
 	(r'(?i)\bjip(e|inho) +tomb(a|ou)', lambda m,r,reply: reply(u'nao fala em jipe tombar!')),
@@ -563,7 +566,7 @@ def cmd_received(r):
 	args = middle.split()
 
 	if trailing != '':
-		a = trailing[1:]
+		a = trailing.lstrip(' ')[1:]
 		args.append(a)
 
 	if prefix != '':
