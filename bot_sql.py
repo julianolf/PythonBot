@@ -210,8 +210,9 @@ password = sys.argv[1]
 CHANNELS = sys.argv[2:]
 
 banco = db('carcereiro.db')
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-sock.connect((SERVER, 6667))
+#sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
+#sock.connect((SERVER, 6667))
+sock = socket.create_connection( ( SERVER, 6667) )
 sock.settimeout(900)
 
 # initially use nick_ (I hope nobody will connect using it :)
