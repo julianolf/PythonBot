@@ -431,7 +431,7 @@ channel_res = relist([
 	('(.*)', lambda m,r,reply: sys.stdout.write("got channel message: %r, %r\n" % (m, r.groups())) or True ),
 	('(.*)', do_slack),
 
-	(r'^@*karma (\w+)$', do_show_karma),
+	(r'^@*karma (\w+) *$', do_show_karma),
 	('[@!]karmas', do_dump_karmas),
 	('[@!]slackers', do_slackers),
 	('[@!]urls', do_urls),
