@@ -7,12 +7,7 @@ import urllib2
 import os
 import time
 import traceback
-from random import choice
-from sqlite3 import dbapi2 as sqlite
-
-if len(sys.argv) < 4:
-	print "usage: bot_sql.py <nick> <nick_password> <channel> [channel2, ...]"
-	sys.exit()
+from pysqlite2 import dbapi2 as sqlite
 
 DATA_LIMIT = 262144
 DATA_CHUNK = 1024
@@ -20,10 +15,8 @@ DATA_CHUNK = 1024
 ENCODING = 'utf-8'
 FALLBACK_ENCODING = 'iso-8859-1'
 
-NICK = None
-SERVER = 'irc.freenode.net'
-
-nick_list = []
+NICK = 'carcereiro'
+SERVER = 'irc.oftc.net' 
 
 def sendcmd(cmd, middle, trail=None):
 	m = '%s ' % (cmd)
@@ -55,7 +48,6 @@ class db():
 		self.cursor.execute('CREATE TABLE karma(nome VARCHAR(30) PRIMARY KEY, total INTEGER);')
 		self.cursor.execute('CREATE TABLE url(nome VARCHAR(30) PRIMARY KEY, total INTEGER);')
 		self.cursor.execute('CREATE TABLE slack(nome VARCHAR(30), total INTEGER, data DATE, PRIMARY KEY (data, nome));')
-		self.cursor.execute('CREATE TABLE link(url VARCHAR(255) PRIMARY KEY, title VARCHAR(255), nick VARCHAR(30), data DATE);')
 		self.conn.commit()
 	def insert_karma(self,nome,total):
 		try:
@@ -63,6 +55,7 @@ class db():
 			self.conn.commit()
 			return True
 		except:
+			#print "Unexpected error:", sys.exc_info()[0]
 			return False
 	def change_karma(self,nome,amount):
 		if not self.insert_karma(nome,amount):
@@ -83,15 +76,6 @@ class db():
 		if not self.insert_url(nome,1):
 			self.cursor.execute("UPDATE url SET total = total + 1 where nome = '%s';" % (nome))
 			self.conn.commit()
-	def insert_link(self, url, title, nick):
-		try:
-			sql_insert = "INSERT INTO link(url,title,nick,data) VALUES ('%s','%s','%s','%s');" % (url,title,nick,time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()))
-			self.cursor.execute(sql_insert)
-			self.conn.commit()
-			print "*** New link registered ***"
-			print sql_insert
-		except:
-			return False
 	def insert_slack(self,nome,total):
 		try:
 			self.cursor.execute("INSERT INTO slack(nome,total,data) VALUES ('%s', %d, '%s' );" % (nome,total,time.strftime("%Y-%m-%d", time.localtime())))
@@ -150,15 +134,6 @@ class db():
 			else:
 				slackers = slackers + ', ' + (linha[0]) + ' = ' + unicode(linha[1])
 		return slackers
-	def get_links(self):
-		self.cursor.execute("SELECT * FROM link ORDER BY data DESC LIMIT 20;")
-		links = []
-		for line in self.cursor:
-			link = { 'url':line[0], 'title':line[1], 'nick':line[2], 'data':line[3] }
-			links.append(link)
-		print "*** Recovered links ***"
-		print links
-		return links
 
 
 def try_unicode(s, enc_list):
@@ -231,11 +206,10 @@ class html:
 		return u"%s? o que é isso?" % (ctype)
 
 
-NICK = sys.argv[1]
-password = sys.argv[2]
-CHANNELS = sys.argv[3:]
+password = sys.argv[1]
+CHANNELS = sys.argv[2:]
 
-banco = db('bot.db')
+banco = db('carcereiro.db')
 #sock = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
 #sock.connect((SERVER, 6667))
 sock = socket.create_connection( ( SERVER, 6667) )
@@ -255,6 +229,7 @@ sendcmd('NICKSERV', ['IDENTIFY', password])
 # join the channel
 for c in CHANNELS:
 	sendcmd('JOIN', [c])
+
 
 sender_re = re.compile('([^!@]+)((![^!@]+)?)((@[^!@]+)?)')
 
@@ -386,26 +361,10 @@ def do_url(m, r, reply):
 
 		reply(t)
 		banco.increment_url( nick )
-		banco.insert_link( url, t, nick )
 	except:
 		reply('[ Failed ]')
 		print url
 		print "*** Unexpected error:", sys.exc_info()[0]
-		traceback.print_exc()
-
-def do_links(m, r, reply):
-	try:
-		print "*** Getting URL list..."
-		nick = m.sender_nick
-		links = banco.get_links()
-		if len(links) > 0:
-			for link in links:
-				send_private_msg(nick, ("%s [%s] by %s at %s \r\n" % (link['title'], link['url'], link['nick'], link['data'])))
-		else:
-			send_private_msg(nick, 'Nao encontrei nenhum link.')
-	except:
-		reply(' Faio :(')
-		print "*** Unexpected error: ", sys.exc_info()[0]
 		traceback.print_exc()
 
 def do_show_karma(m, r, reply):
@@ -427,7 +386,7 @@ def do_urls(m, r, reply):
 	reply('users : ' + banco.get_urls_count())
 
 def do_help(m, r, reply):
-	reply('commands: @karma <name>, @karmas, @urls, @links, @slackers')
+	reply('commands: @karma <name>, @karmas, @urls, @slackers')
 
 
 ## regexp-list handling:
@@ -464,9 +423,6 @@ def reply_not(reply, msg):
 	time.sleep(2)
 	reply('NOT!')
 
-def list_nicks():
-	sendcmd('NAMES', ['#smartgreen'])
-
 # list of (regex, function) pairs
 # the functions should accept three args: the incoming message, and the regexp match object, and a "reply function"
 # to send replies.
@@ -479,7 +435,6 @@ channel_res = relist([
 	('[@!]karmas', do_dump_karmas),
 	('[@!]slackers', do_slackers),
 	('[@!]urls', do_urls),
-	('[@!]links', do_links),
 	('[@!]help', do_help),
 
 	('(https?://[^ \t>\n\r\x01-\x1f]+)', do_url),
@@ -490,48 +445,37 @@ channel_res = relist([
 	(r'\b(\w(\w|[._-])+)\-\-', do_dec_karma),
 	(r'\b(\w(\w|[._-])+) *(\+|-)= *([0-9]+)', do_karma_sum),
 
-	(u'o %s roubou p[ãa]o na casa do jo[ãa]o' % NICK, lambda m,r,reply: send_nick_reply(reply, m.sender_nick, u'quem, eu?')),
+	(u'o carcereiro roubou p[ãa]o na casa do jo[ãa]o', lambda m,r,reply: send_nick_reply(reply, m.sender_nick, u'quem, eu?')),
 
 	('lala', lambda m,r,reply: sys.stdout.write("lala\n") or True),
 	('lalala', lambda m,r,reply: sys.stdout.write("lalala\n")),
 
-	(r'(?i)\bsono', lambda m,r,reply: reply(u'sono--')),
+	(r'(?i)\bcoxa!', lambda m,r,reply: reply(u'brilha muito na segundona!')),
 	(r'(?i)\bronaldo!', lambda m,r,reply: reply(u'brilha muito nu curintia!')),
+	(r'(?i)\bromualdo!', lambda m,r,reply: reply(u'brilha muito na mandriva!')),
+	(r'(?i)\breinaldo!', lambda m,r,reply: reply_not(reply, u'brilha muito co chapéu!')),
+	(r'(?i)\bjuliano!', lambda m,r,reply: reply(u'brilha muito na escalada!')),
 	(r'(?i)\bquinino!', lambda m,r,reply: reply(u'brilha muito na balada!')),
 	(r'(?i)\bcurintia!', lambda m,r,reply: reply(u'brilha muito no ronaldo!')),
 	(r'(?i)\bcoraldo!', lambda m,r,reply: reply(u'brilha muito no ronintia!')),
 	(r'^ *tu[ -]*dum[\.!]*$''', lambda m,r,reply: reply(u'PÁ!')),
 	(u'(?i)^o* *meu +pai +(é|e)h* +detetive[\.!]*$', lambda m,r,reply: reply(u'mas o teu é despachante')),
 	(u'(?i)ningu[ée]m f(a|e)z nada!', lambda m,r,reply: reply(u'ninguém f%sz nada! NA-DA!' % (r.group(1)))),
-	(r'(?i)\b(bot|%s) burro' % NICK, lambda m,r,reply: reply(":'(")),
+	(r'(?i)\bjip(e|inho) +tomb(a|ou)', lambda m,r,reply: reply(u'nao fala em jipe tombar!')),
+	(r'(?i)\b(bot|carcereiro) burro', lambda m,r,reply: reply(":'(")),
+	(r'/wb/', lambda m,r,reply: send_nick_reply(reply, m.sender_nick, u'eu não tenho acesso ao /wb/, seu insensível!')),
 	(u'(?i)\\bo +m[aá]rio\\b', lambda m,r,reply: send_nick_reply(reply, m.sender_nick, u'que mario?')),
 	(u'(?i)^(oi|ol[áa])\\b', lambda m,r,reply: send_nick_reply(reply, m.sender_nick, u'oi, tudo bem?')),
-	(r'^hey[?!.]*$', lambda m,r,reply: send_nick_reply(reply, m.sender_nick, u'ho!')),
 	(r'(?i)\b(nazi|hitler\b)', lambda m,r,reply: send_nick_reply(reply, m.sender_nick, u'Godwin! a discussão acabou, você perdeu.')),
-	(u'(?i)^.*japon(ê|e)s.*$', lambda m,r,reply: reply(u'o que tem o rubensm?')),
-	(u'(?i)^.*(í|i)ndio.*$', lambda m,r,reply: send_nick_reply(reply, m.sender_nick, u'não fala dos meus amigos índios ou vamos brigar!')),
-	(r'(?i)\bnelson', lambda m,r,reply: send_nick_reply(reply, m.sender_nick, u"a-vó-du-nelso-come-nuggets!")),
 
-	('^%s[:, ] *(.*)' % NICK, personal_msg_on_channel),
-	(NICK, lambda m,r,reply: reply(u"eu?")),
+	('^carcereiro[:,] *(.*)', personal_msg_on_channel),
+	('carcereiro|carcy', lambda m,r,reply: reply(u"eu?")),
 ])
 
 
 
 def handle_channel_msg(m, reply_func):
 	return handle_res(channel_res, m, reply_func)
-
-def ramdom_nick(sender_nick):
-	global nick_list
-	nick = 'zé ninguém'
-	count = 0
-	while count < 5:
-		ramdnick = choice(nick_list)
-		count += 1
-		if ramdnick != sender_nick:
-			nick = ramdnick
-			break;
-	return nick
 
 # list of "personal message" res
 # like channel_res, but for (private or nick-prefixed) "personal messages"
@@ -546,32 +490,17 @@ personal_res = relist([
 	('^@*!*help', do_help),
 
 	(r'^oi[?!.]*$', lambda m,r,reply: reply(u'oi. tudo bem?')),
-	(r'^obrigado[!.]*$', lambda m,r,reply: reply(u'disponha')),
-	(u'(é|e) ou n(ã|a)o (é|e)\?$', lambda m,r,reply: reply(u'se você está dizendo...')),
-	(r'\bhey[?!.]*$', lambda m,r,reply: reply(u'ho!')),
+	(r'^hey[?!.]*$', lambda m,r,reply: reply(u'ho!')),
 	(u'^(tudo|td) bem[.,]* e* *(vc|voc[eê])[?!.]*$', lambda m,r,reply: reply(u'tudo bem também')),
 	(r'\b(tudo|td) bem\?$', lambda m,r,reply: reply(u'tudo bem. e você?')),
 	(r'\btudo bem[.!]*$', lambda m,r,reply: reply(u'que bom, então')),
-	(r'\bbom dia[.?!]*$', lambda m,r,reply: reply(u'bom dia :)')),
 
-	(r'\bgrosso[!]*$', lambda m,r,reply: reply(u':~')),
 	('burro', lambda m,r,reply: reply(":(")),
-	(u'o que voc[êe] (acha|me diria) do cleitonalmeida\?', lambda m,r,reply: reply('um tremendo de um safado!')),
-	(r'[cC]achorro[!\?\.]?$', lambda m,r,reply: reply(u'cachorro? eu não sou cachorro não!')),
-	(u'parab[ée]ns[!]*$', lambda m,r,reply: reply("obrigado :)")),
-	(u'^voc(ê|e) (é|e) o cara(!)*$', lambda m,r,reply: reply("eu sou o cara!")),
 	('^ping\?*$', lambda m,r,reply: reply("pong!")),
 	(u'^sim[, ]+voc[êe]', lambda m,r,reply: reply(u"eu não!")),
-	(u'^ent[ãa]o quem foi\?$', lambda m,r,reply: reply(u"foi o %s!" % (ramdom_nick(m.sender_nick)))),
-	(u'^eu n[ãa]o!$', lambda m,r,reply: reply(u"então quem foi?")),
-	(r'^hadouken!?$', lambda m,r,reply: reply(u"shoryuken!")),
-	(r'^sonic boom!?$', lambda m,r,reply: reply(u"tatsumaki senpuukyaku!")),
 
 	(r':(\*+)', lambda m,r,reply: reply(u':%s' % (r.group(1)))),
 	(r'\bte (amo|adoro|odeio)', lambda m,r,reply: reply(u'eu também te %s!' % (r.group(1)))),
-	(r'\bi( )?m your father$', lambda m,r,reply: reply(u'NOOOOOOOOOOOO!')),
-	(u'j[áa] pago(u)?\?$', lambda m,r,reply: reply(u'já pagay')),
-	(u'me d[aá] um abra[cç]o\?$', lambda m,r,reply: reply(u'ô pobrezinho, vem ki!')),
 	('(.*)', lambda m,r,reply: reply(u"não entendi")),
 ])
 
@@ -621,41 +550,12 @@ def handle_mode(m):
 	print '* mode target: %s' % (m.mode_target)
 	if m.mode_target.startswith('#'):
 		return channel_mode(m)
-		
-def handle_join(m):
-	m.join_target = None
-	if m.args[0].startswith('#'):
-		m.join_target = m.args[0]
-	if m.sender_nick != NICK:
-		global nick_list
-		nick_list.append(m.sender_nick)
-		send_channel_msg(m.join_target, u"%s: oi!" % (m.sender_nick))
-	else:
-		list_nicks()
-
-def handle_part(m):
-	m.join_target = None
-	if m.args[0].startswith('#'):
-		m.join_target = m.args[0]
-	if m.sender_nick != NICK:
-		global nick_list
-		nick_list.remove(m.sender_nick)
-
-def handle_names(m):
-	global nick_list
-	print '* names command received'
-	nicks = m.args.pop().split()
-	nick_list = [re.sub('[+@]', '', item) for item in nicks]
-	nick_list.remove(NICK)
 
 # handler for each command type. keys are in lower case
 cmd_handlers = {
 	'privmsg':handle_privmsg,
 	'ping':handle_ping,
 	'mode':handle_mode,
-	'join':handle_join,
-	'part':handle_part,
-	'353':handle_names,
 }
 
 
@@ -689,7 +589,6 @@ def cmd_received(r):
 # regexes for IRC commands:
 protocol_res = relist([
 	('^((:[^ ]* +)?)([a-zA-Z]+)(( +[^:][^ ]*)*)(( +:.*)?)\r*\n*$', cmd_received),
-	('^((:[^ ]* +)?)(353+)(( +[^:][^ ]*)*)(( +:.*)?)\r*\n*$', cmd_received),
 ])
 
 
