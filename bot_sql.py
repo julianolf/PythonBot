@@ -7,8 +7,10 @@ import urllib2
 import os
 import time
 import traceback
+import json
 from random import choice
 from sqlite3 import dbapi2 as sqlite
+from datetime import datetime
 
 if len(sys.argv) < 4:
 	print "usage: bot_sql.py <nick> <nick_password> <channel> [channel2, ...]"
@@ -426,8 +428,62 @@ def do_slackers(m, r, reply):
 def do_urls(m, r, reply):
 	reply('users : ' + banco.get_urls_count())
 
+def do_zodiac(m, r, reply):
+	wished = r.group(1)
+
+	# list of zodiacs and a regular expression matching its names respectively
+	# this will be used to identify what zodiac user is looking for
+	zodiac_table = {
+		u'\u00c1ries':       u'[A\u00c1a\u00e1]ries',
+		u'Touro':            u'[Tt]ouro',
+		u'G\u00eameos':      u'[Gg][\u00eae]meos',
+		u'C\u00e2ncer':      u'[Cc][\u00e2a]ncer',
+		u'Le\u00e3o':        u'[Ll]e[\u00e3a]o',
+		u'Virgem':           u'[Vv]irgem',
+		u'Libra':            u'[Ll]ibra',
+		u'Escorpi\u00e3o':   u'[Ee]scorpi[\u00e3a]o',
+		u'Sagit\u00e1rio':   u'[Ss]agit[\u00e1a]rio',
+		u'Capric\u00f3rnio': u'[Cc]apric[\u00f3o]rnio',
+		u'Aqu\u00e1rio':     u'[Aa]qu[\u00e1a]rio',
+		u'Peixes':           u'[Pp]eixes'
+	}
+
+	# the horoscopo API service provides daily information about zodiac
+	url = 'http://developers.agenciaideias.com.br/horoscopo/json'
+	req = urllib2.Request(url)
+	try:
+		res = urllib2.urlopen(req)
+	except urllib2.HTTPError as httpe:
+		print 'The server could not fulfill the request'
+		print 'Error code: ', httpe.code
+		reply(u'Ta nublado hoje, nada de hor\u00f3scopo')
+	except urllib2.URLError as urle:
+		print 'Failed to reach a server'
+		print 'Reason: ', urle.reason
+		reply(u'Ta nublado hoje, nada de hor\u00f3scopo')
+	else:
+		data = res.read()
+		if data:
+			# try decode data received from horoscopo service
+			info = json.loads(data)
+			if (info and 'signos' in info):
+				wish = None
+				for zodiac_name, zodiac_regex in zodiac_table.iteritems():
+					if re.match(zodiac_regex, wished):
+						wish = zodiac_name
+						break
+				if not wish:
+					reply(wished + u' n\u00e3o consta nos meus mapas astrais')
+				else:
+					msg = 'Os astros parecem confusos, e eu mais ainda'
+					for zodiac in info['signos']:
+						if zodiac['nome'] == wish:
+							msg = zodiac['msg'].replace('\r', '').replace('\n', '').replace('\t', '')
+							break
+					reply(msg)
+
 def do_help(m, r, reply):
-	reply('commands: @karma <name>, @karmas, @urls, @links, @slackers')
+	reply('commands: @karma <name>, @karmas, @urls, @links, @slackers, @zodiac <name>')
 
 
 ## regexp-list handling:
@@ -484,6 +540,8 @@ channel_res = relist([
 
 	('(https?://[^ \t>\n\r\x01-\x1f]+)', do_url),
 
+	(u'^[@!]zodiac (\w+) *$', do_zodiac),
+
 	(r'(?i)\b(g|google|)\.*wave--', lambda m,r,reply: reply(u'o Google Wave é uma merda mesmo, todo mundo já sabe') or True),
 
 	(r'\b(\w(\w|[._-])+)\+\+', do_karma),
@@ -511,6 +569,7 @@ channel_res = relist([
 	(u'(?i)^.*japon(ê|e)s.*$', lambda m,r,reply: reply(u'o que tem o rubensm?')),
 	(u'(?i)^.*(í|i)ndio.*$', lambda m,r,reply: send_nick_reply(reply, m.sender_nick, u'não fala dos meus amigos índios ou vamos brigar!')),
 	(r'(?i)\bnelson', lambda m,r,reply: send_nick_reply(reply, m.sender_nick, u"a-vó-du-nelso-come-nuggets!")),
+	(r'(?i)\berva( .*)?', lambda m,r,reply: reply(u'muita gente fala mal da erva, mas a erva... a erva... :O~')),
 
 	('^%s[:, ] *(.*)' % NICK, personal_msg_on_channel),
 	(NICK, lambda m,r,reply: reply(u"eu?")),
@@ -546,6 +605,7 @@ personal_res = relist([
 	('^@*!*help', do_help),
 
 	(r'^oi[?!.]*$', lambda m,r,reply: reply(u'oi. tudo bem?')),
+	(r'^(tchau|[a(in)]t[eé]|falou)[!.]*$', lambda m,r,reply: reply(u'inté')),
 	(r'^obrigado[!.]*$', lambda m,r,reply: reply(u'disponha')),
 	(u'(é|e) ou n(ã|a)o (é|e)\?$', lambda m,r,reply: reply(u'se você está dizendo...')),
 	(r'\bhey[?!.]*$', lambda m,r,reply: reply(u'ho!')),
@@ -572,6 +632,10 @@ personal_res = relist([
 	(r'\bi( )?m your father$', lambda m,r,reply: reply(u'NOOOOOOOOOOOO!')),
 	(u'j[áa] pago(u)?\?$', lambda m,r,reply: reply(u'já pagay')),
 	(u'me d[aá] um abra[cç]o\?$', lambda m,r,reply: reply(u'ô pobrezinho, vem ki!')),
+	(u'((([Tt]oca|[Bb]ate) aqui )|([Nn][oó]is ))?o/$', lambda m,r,reply: reply(u'\o')),
+	(u'diferença entre o? [Ll]utero e o? [Kk]ant\?$', lambda m,r,reply: reply(u'um é iluminista, o outro protestante')),
+	(u'que matinho [eé] esse\?$', lambda m,r,reply: reply(u'bateu uma onda fooooorte')),
+	(u'[Qq]ue horas ([eé]|s[aã]o)\??$', lambda m,r,reply: reply(datetime.now().time().strftime('%X'))),
 	('(.*)', lambda m,r,reply: reply(u"não entendi")),
 ])
 
@@ -629,7 +693,12 @@ def handle_join(m):
 	if m.sender_nick != NICK:
 		global nick_list
 		nick_list.append(m.sender_nick)
-		send_channel_msg(m.join_target, u"%s: oi!" % (m.sender_nick))
+		if m.sender_nick in ('cleitonalmeida', 'calmeida'):
+			send_channel_msg(m.join_target, u"%s: Bom dia Cleitinhoooo!" % (m.sender_nick))
+		elif m.sender_nick in ('hcassilha', 'harison', 'agaharison'):
+			send_channel_msg(m.join_target, u"%s: Grande aga-arison!" % (m.sender_nick))
+		else:
+			send_channel_msg(m.join_target, u"%s: oi!" % (m.sender_nick))
 	else:
 		list_nicks()
 
