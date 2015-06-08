@@ -478,7 +478,9 @@ def do_zodiac(m, r, reply):
 					msg = 'Os astros parecem confusos, e eu mais ainda'
 					for zodiac in info['signos']:
 						if zodiac['nome'] == wish:
-							msg = zodiac['msg'].replace('\r', '').replace('\n', '').replace('\t', '')
+							zmsg = zodiac['msg'].replace('\r', '').replace('\n', '').replace('\t', '')
+							if zmsg:
+								msg = zmsg
 							break
 					reply(msg)
 
