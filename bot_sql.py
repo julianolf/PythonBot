@@ -609,6 +609,8 @@ personal_res = relist([
 	(r'^obrigado[!.]*$', lambda m,r,reply: reply(u'disponha')),
 	(u'(é|e) ou n(ã|a)o (é|e)\?$', lambda m,r,reply: reply(u'se você está dizendo...')),
 	(r'\bhey[?!.]*$', lambda m,r,reply: reply(u'ho!')),
+	(r'\bho[?!.]*$', lambda m,r,reply: reply(u"let's go!")),
+	(r"\blet's go[?!.]*$", lambda m,r,reply: reply(u'hey!')),
 	(u'^(tudo|td) bem[.,]* e* *(vc|voc[eê])[?!.]*$', lambda m,r,reply: reply(u'tudo bem também')),
 	(r'\b(tudo|td) bem\?$', lambda m,r,reply: reply(u'tudo bem. e você?')),
 	(r'\btudo bem[.!]*$', lambda m,r,reply: reply(u'que bom, então')),
