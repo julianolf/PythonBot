@@ -699,6 +699,10 @@ def handle_join(m):
 			send_channel_msg(m.join_target, u"%s: Bom dia Cleitinhoooo!" % (m.sender_nick))
 		elif m.sender_nick in ('hcassilha', 'harison', 'agaharison'):
 			send_channel_msg(m.join_target, u"%s: Grande aga-arison!" % (m.sender_nick))
+		elif m.sender_nick in ('rubensm', 'rumassa'):
+			send_channel_msg(m.join_target, u"%s: Bom dia japonero!" % (m.sender_nick))
+		elif m.sender_nick in ('Guilho', 'guilho', 'gstrapasson', 'guilherme', 'Guilherme'):
+			send_channel_msg(m.join_target, u"%s: Béééééééé..." % (m.sender_nick))
 		else:
 			send_channel_msg(m.join_target, u"%s: oi!" % (m.sender_nick))
 	else:
