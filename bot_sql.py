@@ -572,6 +572,7 @@ channel_res = relist([
 	(u'(?i)^.*(í|i)ndio.*$', lambda m,r,reply: send_nick_reply(reply, m.sender_nick, u'não fala dos meus amigos índios ou vamos brigar!')),
 	(r'(?i)\bnelson', lambda m,r,reply: send_nick_reply(reply, m.sender_nick, u"a-vó-du-nelso-come-nuggets!")),
 	(r'(?i)\berva( .*)?', lambda m,r,reply: reply(u'muita gente fala mal da erva, mas a erva... a erva... :O~')),
+	(u'(?i)^.*((alterar)|(mexer)|(altera(c|\u00E7)(a|\u00E3)o))+( .*)+(c(o|\u00F3)digo)+( .*)%s.*$' % NICK, lambda m,r,reply: reply(u'Vão me operar? Vai doer, tio? :S')),
 
 	('^%s[:, ] *(.*)' % NICK, personal_msg_on_channel),
 	(NICK, lambda m,r,reply: reply(u"eu?")),
@@ -640,6 +641,7 @@ personal_res = relist([
 	(u'diferença entre o? [Ll]utero e o? [Kk]ant\?$', lambda m,r,reply: reply(u'um é iluminista, o outro protestante')),
 	(u'que matinho [eé] esse\?$', lambda m,r,reply: reply(u'bateu uma onda fooooorte')),
 	(u'[Qq]ue horas ([eé]|s[aã]o)\??$', lambda m,r,reply: reply(datetime.now().time().strftime('%X'))),
+	#(u'(alterar|mexer|altera[cç][aã]o)( .*)c[oó]digo( .*)$', lambda m,r,reply: reply(u'Vão me operar? Vai doer, tio? :S')),
 	('(.*)', lambda m,r,reply: reply(u"não entendi")),
 ])
 
